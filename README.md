@@ -56,7 +56,7 @@ Ce projet est une application "consommatrice" de l'écosystème Open Source Waff
 
 ```
 # Clone the repository
-git clone [https://github.com/waffle-commons/ecoshield-gateway.git](https://github.com/waffle-commons/ecoshield-gateway.git)
+git clone https://github.com/waffle-commons/ecoshield-gateway.git
 cd ecoshield-gateway
 
 # Install Waffle dependencies
