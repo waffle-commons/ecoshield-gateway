@@ -1,0 +1,127 @@
+# Mago Configuration - Waffle Commons (EcoshieldGateway, Beta 6)
+# For full documentation, see https://mago.carthage.software/tools/overview
+php-version = "8.5.5"
+
+[source]
+paths = ["src/", "tests/"]
+includes = ["vendor"]
+excludes = []
+
+# -----------------------------------------------------------------------------
+# Mago Guard — Beta 0 standardized architectural perimeter
+# -----------------------------------------------------------------------------
+# By default a new component depends only on `waffle-commons/contracts`. Edit
+# the `permit` list below if your component legitimately requires another
+# waffle-commons package (and declare the dependency in composer.json).
+[guard]
+mode = "default"
+# Mock-bootstrap files declare the production namespace to override built-in
+# PHP functions via php-mock. They are intentionally cross-layer and excluded
+# from guard analysis.
+excludes = ["tests/bootstrap.php"]
+
+[guard.perimeter]
+layering = ["Waffle", "WaffleTests"]
+
+[guard.perimeter.layers]
+core = ["@global", "Psl\\**"]
+psr = ["Psr\\**"]
+
+[[guard.perimeter.rules]]
+namespace = "Waffle\\Commons\\EcoshieldGateway"
+permit = [
+    "Waffle\\Commons\\EcoshieldGateway\\**",
+    "Waffle\\Commons\\Contracts\\**",
+    "Waffle\\Commons\\Utils\\**",
+    # Worker-safety audit tooling: the #[WorkerSafe] attribute (igor-php 0.7+) is
+    # dev-only metadata read solely by `wfl igor`. It is inert at runtime and
+    # introduces no inter-component coupling, so it is permitted in production src.
+    "IgorPhp\\IgorBundle\\Attribute\\**",
+    "@layer:core",
+    "@layer:psr",
+]
+
+[[guard.perimeter.rules]]
+namespace = "WaffleTests\\Commons\\EcoshieldGateway"
+permit = ["@all"]
+
+[[guard.structural.rules]]
+on = "Waffle\\Commons\\**"
+target = "interface"
+must-be-named = "*Interface"
+reason = "Interfaces must follow the waffle-commons *Interface convention."
+
+[[guard.structural.rules]]
+on = "Waffle\\Commons\\**\\Enum\\**"
+must-be = ["enum"]
+reason = "Reserved namespace: only enum declarations are permitted here."
+
+[[guard.structural.rules]]
+on = "Waffle\\Commons\\**\\Exception\\**"
+target = "class"
+must-be-named = "*Exception"
+reason = "Exception classes must follow the *Exception naming convention."
+
+[formatter]
+print-width = 120
+tab-width = 4
+use-tabs = false
+single-quote = true
+trailing-comma = true
+end-of-line = "lf"
+
+[linter]
+# Zero-Baseline policy (Beta 0): no `baseline = ...` is permitted.
+integrations = ["phpunit"]
+
+[linter.rules]
+# Security - Zero tolerance
+no-insecure-comparison = { level = "error" }
+no-literal-password = { level = "error" }
+no-debug-symbols = { level = "error" }
+disallowed-functions = { level = "error", functions = ["eval", "exec", "system", "shell_exec", "passthru", "phpinfo"] }
+
+# Code quality - Strict
+prefer-interface = { level = "error" }
+strict-types = { level = "error" }
+no-ini-set = { enabled = false }
+
+# >>> alpha6-opinionated-suppressions (generated)
+literal-named-argument = { enabled = false }
+no-boolean-flag-parameter = { enabled = false }
+single-class-per-file = { enabled = false }
+no-else-clause = { enabled = false }
+block-statement = { enabled = false }
+assertion-style = { enabled = false }
+assert-description = { enabled = false }
+tagged-todo = { enabled = false }
+cyclomatic-complexity = { enabled = true, threshold = 50 }
+too-many-methods = { enabled = false }
+kan-defect = { enabled = false }
+halstead = { enabled = false }
+prefer-arrow-function = { enabled = false }
+no-redundant-nullsafe = { enabled = false }
+excessive-parameter-list = { enabled = false }
+# <<< alpha6-opinionated-suppressions
+
+[analyzer]
+# Zero-Baseline policy (Beta 0): no `baseline = ...` is permitted.
+find-unused-definitions = true
+find-unused-expressions = true
+analyze-dead-code = true
+strict-list-index-checks = true
+strict-array-index-existence = true
+ignore = [
+    # (kept from the reference config; unused here but harmless)
+    # cURL options are int constants → mixed-typed array values in test capture; iteration vars
+    # and intermediate Closure extraction are `mixed` by necessity.
+    { code = "mixed-assignment", in = ["tests/"] },
+    { code = "mixed-argument", in = ["tests/"] },
+    { code = "mixed-operand", in = ["tests/"] },
+    # Captured cURL options are populated by the mock at request time; Mago can't prove key
+    # presence across mock-callback boundaries even though every test pre-populates them.
+    { code = "possibly-undefined-int-array-index", in = ["tests/"] },
+    # `PHPUnit\Framework\TestCase::any` is the legacy invocation-matcher; phpunit 12 marks it as
+    # deprecated but offers no drop-in replacement that's compatible with php-mock-phpunit.
+    { code = "deprecated-method", in = ["tests/"] },
+]
