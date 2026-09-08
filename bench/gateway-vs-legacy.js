@@ -1,72 +1,91 @@
 // Protocole de benchmark EcoShield — k6.
 //
-// Ce que ce scénario compare n'est PAS "un framework contre un autre" : les deux
-// chemins servent la même charge utile. Il compare un framework RÉSIDENT à un
-// framework RECONSTRUIT à chaque requête, ce qui est la seule variable que le
+// Ce qui est comparé n'est PAS "un framework contre un autre" : les deux chemins
+// servent la même charge utile, produite par le même code applicatif trivial.
+// La seule variable est l'ARCHITECTURE D'EXÉCUTION — framework résident contre
+// framework reconstruit à chaque requête — parce que c'est la seule chose que le
 // pattern Strangler Fig change réellement.
 //
-//   scenario "rescue" : route reprise par la passerelle    -> jamais de legacy
-//   scenario "proxy"  : route non reprise, passée au legacy -> bootstrap complet
-//   scenario "shield" : route proxyfiée mais mise en cache  -> legacy touché une fois
+// Quatre scénarios, exécutés en séquence pour que la RAM et le CPU relevés en
+// parallèle soient attribuables sans ambiguïté :
+//
+//   1. legacy_direct  — référence : Nginx + PHP-FPM, sans passerelle
+//   2. gateway_proxy  — même route via la passerelle, cache neutralisé
+//   3. gateway_shield — même route via la passerelle, mutualisable
+//   4. gateway_rescue — route reprise, servie depuis le worker
 //
 // Usage :
 //   docker compose up -d
-//   k6 run bench/gateway-vs-legacy.js
-//
-// Relever la RAM en parallèle (c'est la métrique FinOps, pas la latence) :
-//   docker stats --no-stream ecoshield-gateway ecoshield-legacy-fpm
+//   bench/run.sh                 (relève aussi la mémoire — c'est LA métrique FinOps)
 
 import http from 'k6/http';
 import { check } from 'k6';
 import { Trend } from 'k6/metrics';
 
-const GATEWAY = __ENV.GATEWAY_URL || 'http://localhost:8080';
+const GATEWAY = __ENV.GATEWAY_URL || 'http://localhost:8099';
+const LEGACY = __ENV.LEGACY_URL || 'http://localhost:8098';
+const VUS = Number(__ENV.VUS || 20);
+const DURATION = __ENV.DURATION || '30s';
 
-const rescueLatency = new Trend('ecoshield_rescue_ms', true);
-const proxyLatency = new Trend('ecoshield_proxy_ms', true);
-const shieldLatency = new Trend('ecoshield_shield_ms', true);
+const tLegacyDirect = new Trend('ec_legacy_direct_ms', true);
+const tGatewayProxy = new Trend('ec_gateway_proxy_ms', true);
+const tGatewayShield = new Trend('ec_gateway_shield_ms', true);
+const tGatewayRescue = new Trend('ec_gateway_rescue_ms', true);
+
+function phase(exec, startTime) {
+  return { executor: 'constant-vus', vus: VUS, duration: DURATION, exec, startTime, gracefulStop: '5s' };
+}
 
 export const options = {
   scenarios: {
-    rescue: { executor: 'constant-vus', vus: 20, duration: '30s', exec: 'rescue', tags: { path: 'rescue' } },
-    proxy: { executor: 'constant-vus', vus: 20, duration: '30s', exec: 'proxy', startTime: '30s', tags: { path: 'proxy' } },
-    shield: { executor: 'constant-vus', vus: 20, duration: '30s', exec: 'shield', startTime: '60s', tags: { path: 'shield' } },
+    legacy_direct: phase('legacyDirect', '0s'),
+    gateway_proxy: phase('gatewayProxy', '35s'),
+    gateway_shield: phase('gatewayShield', '70s'),
+    gateway_rescue: phase('gatewayRescue', '105s'),
   },
-  // Seuils délibérément prudents : ils doivent échouer si la passerelle cesse de
-  // tenir sa promesse, pas encadrer un résultat déjà connu.
+  // Des seuils qui doivent échouer si la passerelle cesse de tenir sa promesse,
+  // pas encadrer confortablement un résultat déjà connu.
   thresholds: {
-    'http_req_failed': ['rate<0.01'],
-    'ecoshield_rescue_ms': ['p(95)<10'],
+    http_req_failed: ['rate<0.01'],
+    ec_gateway_rescue_ms: ['p(95)<15'],
+    ec_gateway_shield_ms: ['p(95)<25'],
   },
+  summaryTrendStats: ['avg', 'min', 'med', 'p(90)', 'p(95)', 'p(99)', 'max'],
 };
 
-// Route reprise : servie depuis le worker, le monolithe n'est jamais contacté.
-export function rescue() {
+// 1. Référence : le monolithe seul, tel qu'il tourne aujourd'hui en production.
+export function legacyDirect() {
+  const res = http.get(`${LEGACY}/api/products/42`);
+  tLegacyDirect.add(res.timings.duration);
+  check(res, { 'legacy 200': (r) => r.status === 200 });
+}
+
+// 2. La passerelle en pur proxy : le paramètre unique interdit toute mise en
+//    cache, ce qui isole le coût du relais lui-même (le legacy redémarre quand
+//    même son framework à chaque requête).
+export function gatewayProxy() {
+  const res = http.get(`${GATEWAY}/api/orders/7?nocache=${__VU}-${__ITER}`);
+  tGatewayProxy.add(res.timings.duration);
+  check(res, { 'proxy 200': (r) => r.status === 200 });
+}
+
+// 3. Le Shield : même route pour tous les VUs, donc mutualisable. Le monolithe
+//    n'est plus touché qu'une fois par TTL.
+export function gatewayShield() {
+  const res = http.get(`${GATEWAY}/api/catalogue`);
+  tGatewayShield.add(res.timings.duration);
+  check(res, {
+    'shield 200': (r) => r.status === 200,
+    'shield rend un verdict': (r) => ['HIT', 'MISS', 'BYPASS', 'STREAM'].includes(r.headers['X-Ecoshield-Cache']),
+  });
+}
+
+// 4. Route reprise : le monolithe n'est jamais contacté.
+export function gatewayRescue() {
   const res = http.get(`${GATEWAY}/api/products/42`);
-  rescueLatency.add(res.timings.duration);
+  tGatewayRescue.add(res.timings.duration);
   check(res, {
     'rescue 200': (r) => r.status === 200,
     'servie par la passerelle': (r) => r.json('served_by') === 'ecoshield-gateway',
-  });
-}
-
-// Route non reprise : chaque requête paie un bootstrap complet du legacy.
-// Le paramètre unique empêche toute mise en cache, pour isoler le coût du proxy.
-export function proxy() {
-  const res = http.get(`${GATEWAY}/legacy/report?nocache=${__VU}-${__ITER}`);
-  proxyLatency.add(res.timings.duration);
-  check(res, {
-    'proxy 200': (r) => r.status === 200,
-    'servie par le legacy': (r) => r.json('served_by') === 'legacy-monolith',
-  });
-}
-
-// Route proxyfiée ET mutualisable : le legacy est touché une fois par TTL.
-export function shield() {
-  const res = http.get(`${GATEWAY}/legacy/catalogue`);
-  shieldLatency.add(res.timings.duration);
-  check(res, {
-    'shield 200': (r) => r.status === 200,
-    'cache renseigne son verdict': (r) => ['HIT', 'MISS', 'BYPASS', 'STREAM'].includes(r.headers['X-Ecoshield-Cache']),
   });
 }

@@ -23,8 +23,15 @@ services:
       # est le point : un worker qui se recycle rarement est un worker dont le
       # framework reste chaud.
       MAX_REQUESTS: '2000'
+      # Nombre de workers résidents. C'est LA variable à déclarer explicitement
+      # dans un banc FinOps : comparer 4 workers à 64 enfants PHP-FPM ne mesure
+      # pas deux architectures, cela mesure deux dimensionnements. On l'aligne
+      # donc sur la capacité du monolithe pour que la latence redevienne
+      # comparable — la mémoire, elle, reste le résultat intéressant, puisque la
+      # passerelle tient cette concurrence sans que son empreinte suive.
+      WORKER_COUNT: '${WORKER_COUNT:-16}'
     ports:
-      - '8080:80'
+      - '${GATEWAY_PORT:-8099}:80'
     volumes:
       - ./:/app
     depends_on:
@@ -43,6 +50,12 @@ services:
   legacy-nginx:
     image: nginx:1.27-alpine
     container_name: ecoshield-legacy-nginx
+    # Exposé pour le benchmark UNIQUEMENT : la mesure a besoin d'un chemin de
+    # référence qui n'emprunte pas la passerelle, sinon elle compare EcoShield à
+    # lui-même. En déploiement réel, le monolithe n'est joignable que par la
+    # passerelle — c'est tout l'intérêt du bouclier.
+    ports:
+      - '${LEGACY_PORT:-8098}:80'
     volumes:
       - ./legacy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./legacy/public:/var/www/html/public:ro
@@ -54,6 +67,10 @@ services:
     container_name: ecoshield-legacy-fpm
     volumes:
       - ./legacy/public:/var/www/html/public:ro
+      # Sans ce pool, l'image plafonne à 5 enfants : le monolithe ne peut pas
+      # atteindre la concurrence mesurée, et sa courbe mémoire — le sujet même du
+      # benchmark — ne peut pas s'exprimer.
+      - ./legacy/php-fpm/www.conf:/usr/local/etc/php-fpm.d/zz-bench.conf:ro
     # Mémoire volontairement plafonnée : c'est la ressource que la comparaison
     # mesure, et la laisser illimitée rendrait le résultat ininterprétable.
     environment:

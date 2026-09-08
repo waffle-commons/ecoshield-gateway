@@ -1,0 +1,25 @@
+    checks_succeeded...: 100.00% 961704 out of 961704
+    checks_failed......: 0.00%   0 out of 961704
+
+    ✓ rescue 200
+    ✓ proxy 200
+    ✓ shield 200
+
+    HTTP
+    http_req_duration..............: med=4.95ms  p(95)=27.24ms p(99)=31.04ms max=152.27ms
+      { expected_response:true }...: med=4.95ms  p(95)=27.24ms p(99)=31.04ms max=152.27ms
+    http_req_failed................: 0.00%  0 out of 961704
+    http_reqs......................: 961704 534.269638/s
+
+    EXECUTION
+    iteration_duration.............: med=32.61ms p(95)=43.1ms  p(99)=51.68ms max=247.75ms
+    iterations.....................: 320568 178.089879/s
+    vus............................: 6      min=6           max=6
+    vus_max........................: 6      min=6           max=6
+
+    NETWORK
+    data_received..................: 485 MB 269 kB/s
+    data_sent......................: 81 MB  45 kB/s
+
+
+

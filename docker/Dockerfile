@@ -8,9 +8,11 @@ ARG OS='trixie'
 
 FROM dunglas/frankenphp:${FRANKEN_VERSION}-php${PHP_VERSION}-${OS} AS base
 
+# Pas de FRANKENPHP_CONFIG : le mode worker est déclaré dans la Caddyfile,
+# qui est la seule à être lue dès lors qu'on en fournit une.
 ENV APP_ENV=prod \
     SERVER_NAME=":80" \
-    FRANKENPHP_CONFIG="worker ./public/index.php"
+    WORKER_COUNT=4
 
 # Pas de pilote de base de données : la passerelle n'en ouvre aucune. Ce qui
 # n'est pas installé ne peut pas être exploité, et l'image reste petite.

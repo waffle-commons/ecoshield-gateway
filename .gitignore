@@ -6,3 +6,10 @@ composer.phar
 # You may choose to ignore a library lock file http://getcomposer.org/doc/02-libraries.md#lock-file
 # composer.lock
 
+
+# Sorties de mesure : les CSV agrégés et les rapports sont versionnés (ce sont
+# les preuves derrière les chiffres du README), les résumés k6 par marche ne le
+# sont pas — ils sont volumineux, illisibles, et intégralement reconstruits par
+# `bench/ladder.sh`.
+/bench/results/step-*.json
+/bench/results/soak-summary.json

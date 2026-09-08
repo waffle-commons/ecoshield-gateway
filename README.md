@@ -19,16 +19,20 @@ Les architectures PHP traditionnelles (Nginx + PHP-FPM) instancient le framework
 3. **Mise en Cache (Shield) :** Les réponses du legacy sont mises en cache pour décharger la base de données sous-jacente.
     
 
-## 📊 Objectifs et Métriques FinOps (Green IT)
+## 📊 Métriques FinOps (Green IT) — mesurées
 
-En maintenant l'application en mémoire vive (Worker Mode) et en éliminant l'overhead de démarrage (Bootstrap), EcoShield vise les performances suivantes face à PHP-FPM :
+En maintenant l'application en mémoire vive (Worker Mode) et en éliminant l'overhead de démarrage (Bootstrap), EcoShield obtient, face à PHP-FPM, les résultats suivants. Ce ne sont pas des objectifs : ils sortent du banc versionné dans [`bench/`](./bench), et le protocole complet — y compris ce qu'il ne permet PAS de conclure — est dans [`bench/BENCH-RESULT.md`](./bench/BENCH-RESULT.md).
 
-- 📉 **Réduction de la RAM :** ~80% d'économie de mémoire sous haute charge.
+- ⚡ **Latence : ÷13.8 sur les routes interceptées** (1.42 ms contre 19.62 ms au repos), ÷11.3 sur une réponse servie par le cache. L'objectif initial était ÷5 ; le coût de démarrage qui disparaît vaut mieux que cela.
     
-- ⚡ **Latence :** Temps de réponse divisé par 5 sur les routes interceptées.
+- 📉 **Mémoire : empreinte constante.** La passerelle croît de **0.18 Mio par requête concurrente**, PHP-FPM de **4.14 Mio** — une croissance **23× plus lente**. L'économie devient réelle **au-delà d'une vingtaine de requêtes simultanées** : 49 % à 64 concurrentes. En dessous du croisement, un worker résident coûte au contraire *plus* cher qu'un FPM au repos — c'est la contrepartie honnête du modèle, et elle décide de la pertinence du bouclier pour un trafic donné.
     
-- 🌱 **Green IT :** Moins de CPU cyclé = Moins de serveurs allumés = Réduction de l'empreinte carbone.
+- ♾️ **Stabilité dans le temps : +0.23 Mio/h** sur 30 min de charge mixte, sous le bruit de l'allocateur. Un worker résident ne tient sa promesse que si son empreinte est plate *dans la durée* autant qu'en concurrence — une fuite de 1 Mio/h est invisible dix minutes et fatale en une semaine.
     
+- 🌱 **Green IT :** moins de CPU cyclé sur les routes reprises et sur les hits de cache, et une empreinte qui ne suit pas les pics de trafic — donc moins de serveurs provisionnés pour le pic.
+    
+
+> ⚠️ **Ce banc ne mesure pas la capacité.** Le générateur de charge partage les 12 vCPU de la VM avec la passerelle et le monolithe : au-delà de 16 requêtes concurrentes, les chiffres décrivent la contention de l'hôte, pas l'architecture. Un chiffre de débit exigerait un générateur sur une machine séparée. Le détail est dans le rapport.
 
 ## 🏗️ Architecture Technique
 
@@ -44,8 +48,6 @@ Ce projet est une application "consommatrice" de l'écosystème Open Source Waff
     
 
 ## 🚀 Installation & Démonstration
-
-> _Les instructions de déploiement Docker et le protocole de benchmark (k6) seront documentés ici lors de la publication de la Release Candidate._
 
 ### Pré-requis
 
@@ -64,6 +66,23 @@ composer install
 
 # Start the Gateway & the Legacy Dummy Backend
 docker compose up -d
+
+# La passerelle répond sur :8099, le monolithe legacy sur :8098
+curl localhost:8099/__ecoshield/health      # sonde : la passerelle SEULE
+curl localhost:8099/api/products/42         # route reprise, servie par le worker
+curl -i localhost:8099/api/catalogue        # proxyfiée + cache (X-EcoShield-Cache)
+```
+
+### Rejouer les mesures
+
+Le banc tourne sur l'image de **production** (opcache figé, code dans l'image) :
+mesurer l'image de développement reviendrait à mesurer un système de fichiers.
+
+```
+docker compose -f docker-compose.yml -f docker-compose.bench.yml up -d --build
+
+./bench/ladder.sh            # échelle de concurrence : latence + mémoire
+DURATION=30m ./bench/soak.sh # dérive mémoire dans le temps (Mio/h)
 ```
 
 ## 📄 Licence

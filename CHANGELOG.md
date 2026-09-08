@@ -46,6 +46,31 @@ reverse-proxy class; this one is the gateway described in the README — somethi
   without pretending to verify anything; edge auth is beta7 (`Roadmap_Beta7` AXE 1).
 - Runs on `waffle-commons/*` `0.1.0-beta6`, installed from Packagist.
 
+### Measured
+- **The benchmark harness is versioned and was run**: `bench/ladder.sh` (concurrency ladder,
+  latency + memory), `bench/soak.sh` (memory drift over time), `bench/stress.js` (saturation knee).
+  Full protocol and raw data in [`bench/BENCH-RESULT.md`](bench/BENCH-RESULT.md).
+- **Latency: 13.8× on a rescued route** (1.42 ms vs 19.62 ms unloaded) and 11.3× on a cache hit.
+  The README claimed 5×; the measurement beats it.
+- **Memory: +0.18 MiB per concurrent request against PHP-FPM's +4.14 — a 23× slower slope.**
+- **Endurance: +0.23 MiB/h over 30 minutes** of mixed load from a settled baseline — below allocator
+  noise, no detectable leak. The bound is honest about its window: a leak slower than ~0.5 MiB/h
+  would not show up in half an hour.
+- **Two README claims were corrected against the data.** "~80% RAM savings" is not true as a general
+  figure: below the crossover (16–32 concurrent requests) a resident worker costs *more* than an
+  idle FPM — 129.8 MiB vs 18.7 at one concurrent request. Real saving is 49% at 64 concurrent, and
+  80% would need ~166. The defensible claim is the slope, which is also what beta6's `BENCH-05`
+  concluded for the framework itself.
+- **Two methodology errors are recorded rather than quietly fixed**, because they invalidated whole
+  series and the same traps await anyone reproducing this: the image's default `pm.max_children = 5`
+  capped the legacy at five concurrent requests (measuring a queue, not an architecture), and the
+  first runs used the dev image — bind-mounted source with opcache revalidating every file, which on
+  macOS measures virtiofs rather than PHP. Superseded series are kept in `bench/results/`.
+- **What this harness cannot measure: capacity.** The load generator shares the VM's 12 vCPU with
+  the gateway and the monolith, so past 16 concurrent requests the numbers describe host contention.
+  A throughput figure needs a separate load host; that limitation is structural and stated in the
+  README rather than papered over.
+
 ### Quality gates
 `composer mago` zero output · 42 tests, **99.15% statement coverage** · `igor-php` **0 KO**
 (10/10 stateless) · `composer validate --strict` clean.

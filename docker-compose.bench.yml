@@ -1,0 +1,24 @@
+# Surcharge de mesure : la passerelle en image de PRODUCTION.
+#
+# Le service par défaut vise le développement — cible `dev`, source montée en
+# bind-mount, opcache qui revalide chaque fichier à chaque requête. C'est ce
+# qu'on veut pour coder, et c'est exactement ce qu'il ne faut pas mesurer : sur
+# macOS le montage passe par virtiofs, et le `stat()` par fichier et par requête
+# domine tout le reste. Mesurer cette image revient à mesurer un système de
+# fichiers, pas une architecture — ce qui a coûté une série de chiffres faux
+# avant qu'on s'en aperçoive.
+#
+# La cible `prod` copie le code dans l'image, fige l'opcache
+# (`validate_timestamps=0`) et précharge le framework — c'est-à-dire ce qui est
+# réellement déployé, et donc la seule chose dont les chiffres publiés parlent.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.bench.yml up -d --build
+services:
+  gateway:
+    build:
+      target: prod
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: 'false'
+    # Aucun montage : le code vient de l'image.
+    volumes: []

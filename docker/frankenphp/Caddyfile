@@ -1,8 +1,19 @@
 {
-    # Mode worker : le kernel Waffle reste résident entre les requêtes. C'est la
-    # ligne qui distingue EcoShield du monolithe qu'il protège — celui-ci
-    # redémarre son framework à chaque requête, celui-là ne le fait jamais.
-    frankenphp
+    # Le mode worker est déclaré ICI, explicitement.
+    #
+    # L'image officielle injecte bien `FRANKENPHP_CONFIG` dans SA Caddyfile par
+    # défaut, mais dès qu'on en fournit une (ce que fait ce projet), la variable
+    # n'est plus consommée par personne : FrankenPHP démarre en mode classique et
+    # `frankenphp_handle_request()` échoue à la première requête. Le déclarer au
+    # bon endroit vaut mieux que de dépendre d'une injection invisible — et rend
+    # au passage le nombre de workers lisible et réglable, ce qui est la variable
+    # que toute mesure FinOps veut pouvoir bouger.
+    frankenphp {
+        worker {
+            file ./public/index.php
+            num {$WORKER_COUNT:4}
+        }
+    }
     order php_server before file_server
 }
 
