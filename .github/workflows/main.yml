@@ -1,0 +1,302 @@
+# =============================================================================
+# EcoShield Gateway — CI
+#
+# Mirrors the waffle-commons component pipeline (one job per gate, so a failure
+# names itself) with three deliberate differences, because this package is not a
+# framework component:
+#
+#   1. No taint-analysis job. The house pipeline runs `psalm --taint-analysis`,
+#      but this repository ships no psalm config, so the step would fail rather
+#      than analyse. `composer audit` still covers the SCA half.
+#   2. Coverage is asserted here instead of uploaded to Codecov — this repo is
+#      not onboarded there, and a gate that reports nowhere is not a gate.
+#   3. A lean extension set: the gateway is a pure PSR-7/17/18 proxy and touches
+#      no database.
+# =============================================================================
+
+name: EcoShield Gateway Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
+  pull_request:
+
+jobs:
+  prepare:
+    name: ⚙️ Prepare Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          echo 'matrix={"operating-system":["ubuntu-24.04"],"php-version":["8.5"]}' >> $GITHUB_OUTPUT
+
+  build:
+    name: 🏗️ Build & Install
+    needs: prepare
+    runs-on: ${{ matrix.operating-system }}
+    outputs:
+      matrix: ${{ needs.prepare.outputs.matrix }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          tools: composer:v2
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-${{ matrix.php-version }}-composer-
+
+      - name: Install dependencies with Composer
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+  mago_fmt:
+    name: 💅 Formatter (Mago Fmt)
+    needs: build
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          tools: composer:v2
+      - uses: actions/cache@v5
+        with:
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
+      - run: composer install --no-progress --prefer-dist
+      - name: Check formatting with Mago Fmt
+        run: vendor/bin/mago fmt --check
+
+  mago_lint:
+    name: 🎨 Linter (Mago Lint)
+    needs: build
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          tools: composer:v2
+      - uses: actions/cache@v5
+        with:
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
+      - run: composer install --no-progress --prefer-dist
+      - name: Run Mago Lint
+        run: vendor/bin/mago lint --reporting-format=github
+
+  mago_analyze:
+    name: 🔬 Static Analysis (Mago Analyze)
+    needs: build
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          tools: composer:v2
+      - uses: actions/cache@v5
+        with:
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
+      - run: composer install --no-progress --prefer-dist
+      - name: Run Mago Analyze
+        run: vendor/bin/mago analyze --reporting-format=github
+
+  mago_guard:
+    name: 🛡️ Guardian Analysis (Mago Guard)
+    needs: build
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          tools: composer:v2
+      - uses: actions/cache@v5
+        with:
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
+      - run: composer install --no-progress --prefer-dist
+      - name: Run Mago Guard
+        run: vendor/bin/mago guard --reporting-format=github
+
+  igor_php:
+    name: 🧟️ Memory Analysis (Igor PHP)
+    needs: build
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          tools: composer:v2
+      - uses: actions/cache@v5
+        with:
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
+      - run: composer install --no-progress --prefer-dist
+      # `vendor/bin/igor-php` is a bootstrapper, not the auditor: it asks the
+      # GitHub API for releases/latest and downloads THAT binary, so the composer
+      # constraint and composer.lock pin nothing, and it never re-downloads once
+      # a binary exists. Seed the version file it reads, then assert the pin took
+      # — a pin that fails open is worse than no pin, because the gate would go
+      # on reporting green while auditing with a tool nobody chose.
+      - name: Pin the Igor auditor
+        env:
+          IGOR_VERSION: '0.7.0'
+        run: |
+          mkdir -p vendor/igor-php/igor-php/resources/bin
+          printf '%s' "$IGOR_VERSION" > vendor/igor-php/igor-php/resources/bin/.version
+          vendor/bin/igor-php --version 2>&1 | grep -qF "$IGOR_VERSION"
+
+      - name: Run Igor PHP
+        run: vendor/bin/igor-php .
+
+  secret_scan:
+    name: 🕵️ Secret Scanning (TruffleHog)
+    needs: build
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      # Whole-filesystem scan rather than a base..head diff: the diff form needs
+      # both refs, and `github.head_ref` is empty on a push, which silently scans
+      # nothing on exactly the events that matter for a release tag.
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          extra_args: --only-verified
+
+  sbom_generate:
+    name: 📦 SBOM (CycloneDX)
+    needs: build
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          tools: composer:v2
+      - uses: actions/cache@v5
+        with:
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
+      - run: composer install --no-progress --prefer-dist
+      - name: Generate SBOM
+        run: composer CycloneDX:make-sbom --output-format=json --output-file=bom.json
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: sbom-cyclonedx
+          path: bom.json
+
+  security_scan:
+    name: 🛡️ Dependency Audit (SCA)
+    needs: build
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          tools: composer:v2
+      - uses: actions/cache@v5
+        with:
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
+      - run: composer install --no-progress --prefer-dist
+      - name: Audit Composer dependencies (SCA)
+        run: composer audit
+
+  unit_tests:
+    name: 🧪 Tests & Coverage (PHP ${{ matrix.php-version }})
+    needs: [build, mago_lint, mago_analyze, mago_guard, igor_php, secret_scan, sbom_generate, security_scan]
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring, intl, xml, opcache
+          coverage: xdebug
+          tools: composer:v2
+      - uses: actions/cache@v5
+        with:
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
+      - run: composer install --no-progress --prefer-dist
+      - name: Run PHPUnit tests
+        run: vendor/bin/phpunit --coverage-clover ./var/data/phpunit-coverage/clover.xml
+      # Asserted in-repo rather than uploaded: this package is not onboarded to
+      # Codecov, and a coverage gate that reports to nowhere enforces nothing.
+      # The house bar is 95%; the gateway currently sits at 100%.
+      - name: Enforce the coverage floor
+        env:
+          COVERAGE_FLOOR: '95'
+        run: |
+          php -r '
+            $file = "./var/data/phpunit-coverage/clover.xml";
+            if (!is_file($file)) { fwrite(STDERR, "no clover report at {$file}\n"); exit(1); }
+            $metrics = simplexml_load_file($file)->project->metrics;
+            $total = (int) $metrics["statements"];
+            $covered = (int) $metrics["coveredstatements"];
+            $pct = $total > 0 ? $covered / $total * 100 : 100.0;
+            $floor = (float) getenv("COVERAGE_FLOOR");
+            printf("statement coverage: %.2f%% (%d/%d), floor %.0f%%\n", $pct, $covered, $total, $floor);
+            exit($pct + 1e-9 >= $floor ? 0 : 1);
+          '
