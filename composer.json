@@ -2,6 +2,18 @@
     "name": "waffle-commons/ecoshield-gateway",
     "description": "Streaming reverse-proxy gateway built exclusively on public Waffle APIs (RFC-013 EcoShield POC).",
     "type": "library",
+    "keywords": [
+        "gateway",
+        "reverse-proxy",
+        "proxy",
+        "streaming",
+        "psr-7",
+        "psr-18",
+        "frankenphp",
+        "worker-mode",
+        "strangler-fig"
+    ],
+    "homepage": "https://github.com/waffle-commons/ecoshield-gateway",
     "license": "MIT",
     "autoload": {
         "psr-4": {
@@ -19,22 +31,29 @@
             "email": "contact@waffle-commons.cloud"
         }
     ],
-    "minimum-stability": "stable",
+    "support": {
+        "issues": "https://github.com/waffle-commons/ecoshield-gateway/issues",
+        "source": "https://github.com/waffle-commons/ecoshield-gateway"
+    },
+    "minimum-stability": "beta",
+    "prefer-stable": true,
     "require": {
         "php": "^8.5",
         "psr/http-client": "^1.0",
         "psr/http-factory": "^1.1",
-        "psr/http-message": "^2.0",
-        "waffle-commons/contracts": "self.version"
+        "psr/http-message": "^2.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^12.5",
-        "carthage-software/mago": "1.29.*",
+        "carthage-software/mago": "^1.29",
         "vimeo/psalm": "^6.16",
         "php-mock/php-mock-phpunit": "^2.15",
         "cyclonedx/cyclonedx-php-composer": "^6.2",
         "igor-php/igor-php": "^0.7.0",
-        "waffle-commons/http": "self.version"
+        "waffle-commons/http": "^0.1.0-beta6"
+    },
+    "suggest": {
+        "waffle-commons/http-client": "PSR-18 client streaming both directions in 8 KiB chunks — what makes the gateway's constant-memory (deltaM = 0) guarantee hold for large payloads."
     },
     "scripts": {
         "formatter": "vendor/bin/mago fmt",
@@ -43,10 +62,6 @@
         "guard": "vendor/bin/mago guard",
         "igor": "vendor/bin/igor-php .",
         "phpunit": "vendor/bin/phpunit --log-junit var/data/phpunit-coverage/junit.xml --coverage-html var/data/phpunit-coverage",
-        "benchmark": [
-            "Composer\\Config::disableProcessTimeout",
-            "vendor/bin/phpbench run --report=default_report --output=waffle_html --retry-threshold=10"
-        ],
         "mago": [
             "@formatter",
             "@linter",
@@ -63,8 +78,7 @@
         "ci": [
             "@mago",
             "@tests",
-            "composer audit",
-            "vendor/bin/psalm --taint-analysis"
+            "composer audit"
         ]
     },
     "config": {
