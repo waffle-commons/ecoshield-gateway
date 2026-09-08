@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WaffleTests\Commons\EcoshieldGateway\Helper;
+namespace AppTests\Helper;
 
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;

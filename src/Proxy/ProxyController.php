@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Waffle\Commons\EcoshieldGateway;
+namespace App\Proxy;
 
+use App\Exception\GatewayException;
+use App\Http\HopByHopHeaders;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
-use Waffle\Commons\EcoshieldGateway\Exception\GatewayException;
-use Waffle\Commons\EcoshieldGateway\Http\HopByHopHeaders;
 
 /**
  * Streaming reverse proxy (RFC-013 — EcoShield POC, `[GATE-01]`).

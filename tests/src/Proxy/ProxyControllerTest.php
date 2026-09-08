@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace WaffleTests\Commons\EcoshieldGateway;
+namespace AppTests\Proxy;
 
+use App\Exception\GatewayException;
+use App\Http\HopByHopHeaders;
+use App\Proxy\ProxyController;
+use AppTests\Helper\RecordingClient;
+use AppTests\Helper\ThrowingClient;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
-use Waffle\Commons\EcoshieldGateway\Exception\GatewayException;
-use Waffle\Commons\EcoshieldGateway\Http\HopByHopHeaders;
-use Waffle\Commons\EcoshieldGateway\ProxyController;
 use Waffle\Commons\Http\Factory\RequestFactory;
 use Waffle\Commons\Http\Factory\StreamFactory;
 use Waffle\Commons\Http\Factory\UriFactory;
 use Waffle\Commons\Http\Response;
 use Waffle\Commons\Http\ServerRequest;
-use WaffleTests\Commons\EcoshieldGateway\Helper\RecordingClient;
-use WaffleTests\Commons\EcoshieldGateway\Helper\ThrowingClient;
 
 #[CoversClass(ProxyController::class)]
 #[CoversClass(HopByHopHeaders::class)]

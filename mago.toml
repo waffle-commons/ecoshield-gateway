@@ -1,4 +1,4 @@
-# Mago Configuration - Waffle Commons (EcoshieldGateway, Beta 6)
+# Mago Configuration - EcoShield Gateway (POC application on Waffle Commons)
 # For full documentation, see https://mago.carthage.software/tools/overview
 php-version = "8.5.5"
 
@@ -21,28 +21,30 @@ mode = "default"
 excludes = ["tests/bootstrap.php"]
 
 [guard.perimeter]
-layering = ["Waffle", "WaffleTests"]
+layering = ["App", "AppTests"]
 
 [guard.perimeter.layers]
 core = ["@global", "Psl\\**"]
 psr = ["Psr\\**"]
+# This is an APPLICATION, not a framework component, so the contracts-only
+# perimeter that governs waffle-commons packages does not apply: an app is
+# precisely the place allowed to assemble concrete implementations. What the
+# perimeter still enforces is that it assembles them through PUBLIC packages —
+# the POC's whole thesis is that a real gateway needs no reach-through into
+# component internals, so every namespace below is a published package.
+waffle = ["Waffle\\Commons\\**", "Waffle\\Core\\**", "Waffle\\Event\\**", "Waffle\\Exception\\**", "Waffle\\Kernel"]
 
 [[guard.perimeter.rules]]
-namespace = "Waffle\\Commons\\EcoshieldGateway"
+namespace = "App"
 permit = [
-    "Waffle\\Commons\\EcoshieldGateway\\**",
-    "Waffle\\Commons\\Contracts\\**",
-    "Waffle\\Commons\\Utils\\**",
-    # Worker-safety audit tooling: the #[WorkerSafe] attribute (igor-php 0.7+) is
-    # dev-only metadata read solely by `wfl igor`. It is inert at runtime and
-    # introduces no inter-component coupling, so it is permitted in production src.
-    "IgorPhp\\IgorBundle\\Attribute\\**",
+    "App\\**",
     "@layer:core",
     "@layer:psr",
+    "@layer:waffle",
 ]
 
 [[guard.perimeter.rules]]
-namespace = "WaffleTests\\Commons\\EcoshieldGateway"
+namespace = "AppTests"
 permit = ["@all"]
 
 [[guard.structural.rules]]
@@ -112,6 +114,13 @@ analyze-dead-code = true
 strict-list-index-checks = true
 strict-array-index-existence = true
 ignore = [
+    # Frontière de désérialisation du Shield. `CacheInterface::get()` rend
+    # `mixed` par contrat — c'est vrai de tout cache PSR-16 — et le seul moyen
+    # de le refuser serait de ne pas lire le cache. La valeur est intégralement
+    # re-vérifiée sur place (`is_int` / `is_array` / `is_string` par champ, puis
+    # filtrage des valeurs d'en-têtes) avant de reconstruire quoi que ce soit :
+    # une entrée mal formée se solde par un miss. Portée à ce seul fichier.
+    { code = "mixed-assignment", in = ["src/Shield/ResponseCache.php"] },
     # (kept from the reference config; unused here but harmless)
     # cURL options are int constants → mixed-typed array values in test capture; iteration vars
     # and intermediate Closure extraction are `mixed` by necessity.

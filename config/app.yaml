@@ -1,0 +1,42 @@
+# Configuration de la passerelle EcoShield.
+#
+# Tout ce qui dépend du déploiement est interpolé depuis l'environnement, pour
+# que la même image serve en local et en production sans réécriture.
+waffle:
+  env: '%env(APP_ENV)%'
+  debug: false
+
+  # Le middleware TrustedHost rejette tout Host non listé : une passerelle est
+  # exposée par construction, et un Host forgé est le vecteur classique
+  # d'empoisonnement de cache et de redirection.
+  trusted_hosts:
+    - localhost
+    - 127.0.0.1
+    - gateway
+
+  # Niveau 1 : la passerelle ne porte pas d'ABAC (voir AnonymousSecurityContext).
+  # Les contrôleurs déclarent #[PublicAccess] explicitement.
+  security:
+    level: 1
+
+  paths:
+    controllers: 'src/Controller'
+
+  cache:
+    # 'array' (par worker), 'file' (partagé par volume) ou 'redis' (partagé par
+    # tous les workers ET toutes les instances — le seul choix correct dès qu'il
+    # y a plus d'un réplica, puisqu'un cache par worker multiplie les appels au
+    # legacy par le nombre de workers).
+    adapter: '%env(CACHE_ADAPTER)%'
+    dsn: '%env(REDIS_DSN)%'
+
+gateway:
+  # Le monolithe legacy à protéger. Fixé par l'exploitant, jamais par le client.
+  upstream: '%env(UPSTREAM_URL)%'
+
+  shield:
+    # Durée de vie d'une réponse mise en cache, en secondes.
+    ttl: 30
+    # Au-delà, la réponse traverse en flux et n'est pas mise en cache : la
+    # garantie de mémoire constante prime sur le taux de hit.
+    max_body_bytes: 262144

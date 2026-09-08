@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Waffle\Commons\EcoshieldGateway\Exception;
+namespace App\Exception;
 
 use RuntimeException;
 use Throwable;

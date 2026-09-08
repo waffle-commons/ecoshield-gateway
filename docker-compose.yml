@@ -1,0 +1,70 @@
+# EcoShield Gateway — la démonstration complète en une commande.
+#
+# Trois rôles, qui sont exactement les trois de l'architecture décrite dans le
+# README : la passerelle en mode worker, le monolithe legacy qu'elle protège
+# (Nginx + PHP-FPM, un bootstrap par requête), et le cache partagé.
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: dev
+    container_name: ecoshield-gateway
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: 'true'
+      SERVER_NAME: ':80'
+      # La destination est fixée ici, par l'exploitant. Aucun client ne peut la
+      # changer : la passerelle ne reprend du message entrant que chemin + query.
+      UPSTREAM_URL: 'http://legacy-nginx:80'
+      CACHE_ADAPTER: 'redis'
+      REDIS_DSN: 'redis://redis:6379'
+      # Nombre de requêtes servies avant recyclage du worker. Le laisser élevé
+      # est le point : un worker qui se recycle rarement est un worker dont le
+      # framework reste chaud.
+      MAX_REQUESTS: '2000'
+    ports:
+      - '8080:80'
+    volumes:
+      - ./:/app
+    depends_on:
+      - legacy-nginx
+      - redis
+    # La sonde interroge la passerelle SEULE : elle ne doit pas se déclarer
+    # malade parce que le monolithe est tombé, sans quoi l'orchestrateur
+    # redémarrerait le seul composant encore capable de servir du cache.
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', '-H', 'Host: localhost', 'http://127.0.0.1/__ecoshield/health']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+  legacy-nginx:
+    image: nginx:1.27-alpine
+    container_name: ecoshield-legacy-nginx
+    volumes:
+      - ./legacy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./legacy/public:/var/www/html/public:ro
+    depends_on:
+      - legacy-fpm
+
+  legacy-fpm:
+    image: php:8.3-fpm-alpine
+    container_name: ecoshield-legacy-fpm
+    volumes:
+      - ./legacy/public:/var/www/html/public:ro
+    # Mémoire volontairement plafonnée : c'est la ressource que la comparaison
+    # mesure, et la laisser illimitée rendrait le résultat ininterprétable.
+    environment:
+      PHP_MEMORY_LIMIT: '256M'
+
+  redis:
+    image: redis:7-alpine
+    container_name: ecoshield-redis
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5

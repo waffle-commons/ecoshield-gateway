@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Waffle\Commons\EcoshieldGateway\Http;
+namespace App\Http;
 
 use Psr\Http\Message\MessageInterface;
 

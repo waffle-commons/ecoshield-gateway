@@ -1,30 +1,20 @@
 {
     "name": "waffle-commons/ecoshield-gateway",
-    "description": "Streaming reverse-proxy gateway built exclusively on public Waffle APIs (RFC-013 EcoShield POC).",
-    "type": "library",
+    "description": "FinOps-driven Strangler-Fig API gateway POC: intercept, proxy and cache a legacy PHP monolith from a FrankenPHP worker.",
+    "type": "project",
     "keywords": [
         "gateway",
         "reverse-proxy",
-        "proxy",
-        "streaming",
-        "psr-7",
-        "psr-18",
+        "strangler-fig",
+        "finops",
+        "green-it",
         "frankenphp",
         "worker-mode",
-        "strangler-fig"
+        "legacy-modernization",
+        "psr-15"
     ],
     "homepage": "https://github.com/waffle-commons/ecoshield-gateway",
     "license": "MIT",
-    "autoload": {
-        "psr-4": {
-            "Waffle\\Commons\\EcoshieldGateway\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "WaffleTests\\Commons\\EcoshieldGateway\\": "tests/src/"
-        }
-    },
     "authors": [
         {
             "name": "Leslie Petrimaux",
@@ -35,25 +25,43 @@
         "issues": "https://github.com/waffle-commons/ecoshield-gateway/issues",
         "source": "https://github.com/waffle-commons/ecoshield-gateway"
     },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AppTests\\": "tests/src/"
+        }
+    },
     "minimum-stability": "beta",
     "prefer-stable": true,
     "require": {
         "php": "^8.5",
         "psr/http-client": "^1.0",
         "psr/http-factory": "^1.1",
-        "psr/http-message": "^2.0"
+        "psr/http-message": "^2.0",
+        "waffle-commons/cache": "^0.1.0-beta6",
+        "waffle-commons/config": "^0.1.0-beta6",
+        "waffle-commons/container": "^0.1.0-beta6",
+        "waffle-commons/contracts": "^0.1.0-beta6",
+        "waffle-commons/error-handler": "^0.1.0-beta6",
+        "waffle-commons/http": "^0.1.0-beta6",
+        "waffle-commons/http-client": "^0.1.0-beta6",
+        "waffle-commons/log": "^0.1.0-beta6",
+        "waffle-commons/pipeline": "^0.1.0-beta6",
+        "waffle-commons/routing": "^0.1.0-beta6",
+        "waffle-commons/runtime": "^0.1.0-beta6",
+        "waffle-commons/security": "^0.1.0-beta6",
+        "waffle-commons/utils": "^0.1.0-beta6",
+        "waffle-commons/waffle": "^0.1.0-beta6"
     },
     "require-dev": {
         "phpunit/phpunit": "^12.5",
         "carthage-software/mago": "^1.29",
-        "vimeo/psalm": "^6.16",
-        "php-mock/php-mock-phpunit": "^2.15",
         "cyclonedx/cyclonedx-php-composer": "^6.2",
-        "igor-php/igor-php": "^0.7.0",
-        "waffle-commons/http": "^0.1.0-beta6"
-    },
-    "suggest": {
-        "waffle-commons/http-client": "PSR-18 client streaming both directions in 8 KiB chunks — what makes the gateway's constant-memory (deltaM = 0) guarantee hold for large payloads."
+        "igor-php/igor-php": "^0.7.0"
     },
     "scripts": {
         "formatter": "vendor/bin/mago fmt",
@@ -85,6 +93,7 @@
         "allow-plugins": {
             "carthage-software/mago": true,
             "cyclonedx/cyclonedx-php-composer": true
-        }
+        },
+        "sort-packages": true
     }
 }

@@ -1,0 +1,18 @@
+{
+    # Mode worker : le kernel Waffle reste résident entre les requêtes. C'est la
+    # ligne qui distingue EcoShield du monolithe qu'il protège — celui-ci
+    # redémarre son framework à chaque requête, celui-là ne le fait jamais.
+    frankenphp
+    order php_server before file_server
+}
+
+{$SERVER_NAME:localhost} {
+    root * public/
+    encode zstd gzip
+
+    php_server {
+        resolve_root_symlink
+    }
+
+    file_server
+}
