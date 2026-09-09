@@ -57,7 +57,10 @@ fichier, et la valeur y est intégralement revérifiée.
 git clone https://github.com/waffle-commons/ecoshield-gateway.git
 cd ecoshield-gateway
 composer install
-docker compose up -d       # passerelle :8099, legacy :8098, Redis
+
+# Surcharge de développement : sources montées depuis l'hôte, édition immédiate.
+# Le défaut, lui, démarre l'image de production — c'est ce qu'un utilisateur lance.
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ```
 
 Vérifier que la pile répond :
@@ -67,9 +70,10 @@ curl localhost:8099/__ecoshield/health
 curl localhost:8099/api/products/42
 ```
 
-**Pour mesurer, utiliser l'image de production**, jamais celle de développement : cette dernière
-monte les sources depuis l'hôte et fait revalider chaque fichier par l'opcache, ce qui mesure le
-système de fichiers plutôt que PHP.
+**Pour mesurer, ne jamais utiliser la surcharge de développement** : elle monte les sources depuis
+l'hôte et fait revalider chaque fichier par l'opcache, ce qui mesure le système de fichiers plutôt
+que PHP. La surcharge de mesure part du défaut (production) et publie en plus le monolithe, pour
+disposer d'un chemin de référence.
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.bench.yml up -d --build

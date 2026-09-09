@@ -3,16 +3,25 @@
 # Trois rôles, qui sont exactement les trois de l'architecture décrite dans le
 # README : la passerelle en mode worker, le monolithe legacy qu'elle protège
 # (Nginx + PHP-FPM, un bootstrap par requête), et le cache partagé.
+#
+# Ce fichier est le défaut, et le défaut est PRODUCTION : image `prod` (code
+# copié, opcache figé, préchargement), debug désactivé, et seule la passerelle
+# publie un port. La première commande que lance un lecteur du README doit
+# démarrer ce qui est réellement déployé — pas un mode développement dont les
+# traces d'erreur et les performances ne ressemblent à rien de livrable.
+#
+#   développement : docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#   mesure        : docker compose -f docker-compose.yml -f docker-compose.bench.yml up -d --build
 services:
   gateway:
     build:
       context: .
       dockerfile: docker/Dockerfile
-      target: dev
+      target: prod
     container_name: ecoshield-gateway
     environment:
-      APP_ENV: dev
-      APP_DEBUG: 'true'
+      APP_ENV: prod
+      APP_DEBUG: 'false'
       SERVER_NAME: ':80'
       # La destination est fixée ici, par l'exploitant. Aucun client ne peut la
       # changer : la passerelle ne reprend du message entrant que chemin + query.
@@ -32,8 +41,6 @@ services:
       WORKER_COUNT: '${WORKER_COUNT:-16}'
     ports:
       - '${GATEWAY_PORT:-8099}:80'
-    volumes:
-      - ./:/app
     depends_on:
       - legacy-nginx
       - redis
@@ -50,12 +57,11 @@ services:
   legacy-nginx:
     image: nginx:1.27-alpine
     container_name: ecoshield-legacy-nginx
-    # Exposé pour le benchmark UNIQUEMENT : la mesure a besoin d'un chemin de
-    # référence qui n'emprunte pas la passerelle, sinon elle compare EcoShield à
-    # lui-même. En déploiement réel, le monolithe n'est joignable que par la
-    # passerelle — c'est tout l'intérêt du bouclier.
-    ports:
-      - '${LEGACY_PORT:-8098}:80'
+    # Aucun port publié : le monolithe n'est joignable QUE par la passerelle.
+    # C'est tout l'intérêt du bouclier — un amont accessible en direct se
+    # contourne, et la passerelle ne protège plus rien. Le banc le publie
+    # temporairement (docker-compose.bench.yml) parce qu'une mesure a besoin
+    # d'un chemin de référence ; un déploiement ne le fait jamais.
     volumes:
       - ./legacy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./legacy/public:/var/www/html/public:ro

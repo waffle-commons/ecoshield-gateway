@@ -156,7 +156,13 @@ docker compose up -d
 ```
 
 La pile démarre trois rôles : la passerelle (`:8099`), un monolithe legacy de démonstration
-(`:8098`, Nginx + PHP-FPM qui reconstruit son framework à chaque requête) et Redis.
+(Nginx + PHP-FPM, qui reconstruit son framework à chaque requête) et Redis.
+
+**Seule la passerelle publie un port.** Le monolithe n'est joignable qu'à travers elle — un amont
+accessible en direct se contourne, et le bouclier ne protège alors plus rien. Le défaut démarre
+l'image de **production** : la première commande du README doit lancer ce qui est réellement
+déployé, pas un mode développement dont les traces et les performances ne ressemblent à rien de
+livrable.
 
 ```bash
 curl localhost:8099/__ecoshield/health   # sonde : la PASSERELLE seule, pas l'amont
@@ -170,10 +176,18 @@ Le banc s'exécute sur l'image de **production** — mesurer l'image de dévelop
 mesurer un système de fichiers, ce que la première campagne a appris à ses dépens.
 
 ```bash
+# La surcharge de mesure publie temporairement le monolithe : le banc a besoin
+# d'un chemin de référence qui n'emprunte pas la passerelle.
 docker compose -f docker-compose.yml -f docker-compose.bench.yml up -d --build
 
 ./bench/ladder.sh              # échelle de concurrence : latence et mémoire
 DURATION=3h ./bench/soak.sh    # dérive mémoire dans le temps (Mio/h + borne de détection)
+```
+
+Pour développer, la surcharge inverse monte les sources depuis l'hôte :
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ```
 
 ### Configuration
