@@ -127,6 +127,35 @@ def envelope(points: list[tuple[float, float]], buckets: int = 12) -> tuple[list
     return [hi[k] for k in sorted(hi)], [lo[k] for k in sorted(lo)]
 
 
+def cadence_health(points: list[tuple[float, float]], nominal: float) -> tuple[str, bool]:
+    """L'échantillonneur a-t-il tenu sa cadence — ou l'instrument a-t-il décroché ?
+
+    C'est le contrôle que la campagne de 3 h de beta6 n'avait pas, et qui lui a
+    coûté son résultat. La machine hôte avait décroché au bout d'une heure
+    environ : la mémoire des DEUX conteneurs s'est effondrée d'un coup — ce
+    qu'aucune fuite applicative ne produit — et l'échantillonneur lui-même
+    ralentissait de 19 s à 94 s entre deux relevés. Le signe distinctif n'est pas
+    dans les valeurs, il est dans les INTERVALLES : un relevé régulier décrit le
+    sujet, un relevé qui s'étire décrit l'instrument.
+
+    Sans ce contrôle, une fenêtre corrompue rend des chiffres parfaitement
+    plausibles, et rien ne dit qu'ils ne valent rien.
+    """
+    if len(points) < 3:
+        return "relevés insuffisants", False
+
+    gaps = sorted(points[i][0] - points[i - 1][0] for i in range(1, len(points)))
+    median = gaps[len(gaps) // 2]
+    worst = gaps[-1]
+    # Un décrochage franc, pas une hésitation : le seuil vise le facteur ~5
+    # observé en beta6, pas la gigue ordinaire d'un `docker stats`.
+    degraded = worst > max(nominal * 3.0, median * 3.0)
+    verdict = (
+        f"médiane {median:.1f} s, pire écart {worst:.1f} s (nominal {nominal:.0f} s)"
+    )
+    return verdict, degraded
+
+
 def mean_window(points: list[tuple[float, float]], fraction: float, tail: bool) -> float | None:
     """Moyenne du premier (ou dernier) `fraction` de la fenêtre.
 
@@ -303,6 +332,18 @@ def main(directory: str) -> int:
         print(
             f"### Tas PHP du worker — {len(heap)} relevés sur {span_min:.1f} min\n"
         )
+        cadence, degraded = cadence_health(heap, 2.0)
+        if degraded:
+            print(
+                f"> **INSTRUMENT DÉGRADÉ — ne rien publier de cette fenêtre.** "
+                f"Cadence de relevé : {cadence}. Un échantillonneur qui s'étire de "
+                f"la sorte signale que la machine hôte a décroché, pas que la "
+                f"mémoire a bougé. C'est le mode de panne qui a invalidé la "
+                f"campagne de 3 h de beta6 ; les valeurs ci-dessous sont "
+                f"conservées pour inspection, pas pour publication.\n"
+            )
+        else:
+            print(f"> Cadence de relevé saine : {cadence}. L'instrument a tenu.\n")
         print(
             "Granularité à l'octet : c'est la seule résolution capable de trancher "
             "un critère exprimé en kio. Les deux enveloppes séparent les workers, "
@@ -357,6 +398,12 @@ def main(directory: str) -> int:
         span_min = (rss[-1][0] - rss[0][0]) / 60.0 if len(rss) > 1 else 0.0
         print(f"### RSS conteneur — {label} (`{container}`)\n")
         print(f"{len(rss)} relevés sur {span_min:.1f} min.\n")
+        cadence, degraded = cadence_health(rss, 5.0)
+        if degraded:
+            print(
+                f"> **INSTRUMENT DÉGRADÉ — ne rien publier de cette fenêtre.** "
+                f"Cadence : {cadence}.\n"
+            )
         print("| Série | début | fin | Δ | pente (IC 95 %) | verdict |")
         print("|---|---:|---:|---:|---:|---|")
         print(drift_row("RSS (Mio)", rss, MIB, "Mio"))
