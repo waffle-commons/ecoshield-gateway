@@ -5,13 +5,27 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 [versionnage sémantique](https://semver.org/lang/fr/).
 
 EcoShield est une **application autonome**, versionnée et publiée indépendamment du framework
-qu'elle consomme. Le numéro de version indique la version de `waffle-commons` sur laquelle elle a été
-construite et vérifiée ; elle n'appartient pas à la vague de publication du framework et ne bloque
-jamais celle-ci.
+qu'elle consomme. Son numéro de version décrit **la passerelle et rien d'autre** : il ne recopie pas
+celui de `waffle-commons`, parce qu'une version doit parler de l'artefact qu'elle étiquette. Une
+publication du framework ne provoque donc pas de version ici, et réciproquement.
+
+La version du framework sur laquelle chaque release a été construite et vérifiée est indiquée dans
+l'entrée correspondante, et fait foi dans `composer.json`.
+
+La trajectoire suit la maturité de la passerelle, pas le calendrier du framework :
+
+| Version | Étape | Framework de référence |
+|---|---|---|
+| `0.1.0` | Preuve de concept | `0.1.0-beta6` |
+| `0.2.0` | Alpha — bac de test Strangler Fig | `0.1.0-beta7` |
+| `0.3.0` | Bêta — campagne FinOps complète | `0.1.0-beta8` |
+| `1.0.0` | Production, après la période de soak | `1.0.0` |
 
 ---
 
-## [0.1.0-beta6] — 2026-09
+## [0.1.0] — 2026-09
+
+_Construite et vérifiée sur `waffle-commons` **`0.1.0-beta6`**, installé depuis Packagist._
 
 Première version publiée en tant qu'**application déployable**. Les itérations précédentes ne
 livraient qu'une classe de proxy inverse ; celle-ci est la passerelle décrite par le README — une
