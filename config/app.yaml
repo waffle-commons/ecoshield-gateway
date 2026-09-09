@@ -34,6 +34,11 @@ gateway:
   # Le monolithe legacy à protéger. Fixé par l'exploitant, jamais par le client.
   upstream: '%env(UPSTREAM_URL)%'
 
+  # Ouvre `/__ecoshield/memory`, qui publie le tas du worker. Non défini = fermé :
+  # l'empreinte mémoire d'une passerelle exposée renseigne un attaquant sur
+  # l'effet de ses requêtes. Seul le banc (docker-compose.perf.yml) l'ouvre.
+  diagnostics: '%env(ECOSHIELD_DIAGNOSTICS)%'
+
   shield:
     # Durée de vie d'une réponse mise en cache, en secondes.
     ttl: 30

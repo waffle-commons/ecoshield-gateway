@@ -19,6 +19,12 @@ composer.phar
 /bench/results/step-*.json
 /bench/results/soak-summary.json
 
+# Transcriptions console de k6 : quelques dizaines de kio de lignes de
+# progression (« running (12.0s)… »), intégralement reconstruites par
+# `bench/scripts/perf-run.sh`. Les résumés JSON et les CSV, eux, RESTENT suivis :
+# ce sont les preuves derrière les chiffres de BENCHMARK_RESULTS.md.
+/bench/results/perf-*-k6.txt
+
 # Brouillon de description de release : support de rédaction pour la publication
 # GitHub, pas un document du dépôt. Il duplique volontairement le CHANGELOG et le
 # README — le versionner créerait une troisième source à tenir à jour.

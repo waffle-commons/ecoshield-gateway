@@ -30,6 +30,23 @@ WORKDIR /app
 FROM base AS dev
 
 ENV APP_ENV=dev
+
+# Pilote de couverture — indispensable, et absent jusqu'ici.
+#
+# `phpunit.xml` déclare un rapport clover. Sans pilote, PHPUnit 12.5 ne se
+# contente pas d'un avertissement : il charge la suite, signale « No code
+# coverage driver available » et SORT EN ERREUR sans exécuter un seul test. La
+# sortie « No tests executed! » ressemble alors à une suite vide, alors que les
+# 45 tests avaient bien été trouvés — l'image de développement était incapable
+# de faire tourner sa propre suite.
+#
+# pcov plutôt que xdebug : il ne fait que la couverture, pour une fraction du
+# coût, et le débogage pas-à-pas n'est pas ce que cette image sert.
+#
+# Dans l'étage `dev` UNIQUEMENT : l'étage `prod` ne doit embarquer aucun
+# instrument de mesure de code — c'est de la surface d'attaque et du ralentissement.
+RUN install-php-extensions pcov
+
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile" ]
 

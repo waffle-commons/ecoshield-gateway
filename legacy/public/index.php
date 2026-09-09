@@ -46,6 +46,33 @@ header('X-Served-By: legacy-monolith');
 
 $payload = match (true) {
     $path === '/health' => ['status' => 'ok', 'service' => 'legacy-monolith'],
+    // Miroir d'en-têtes, pour le banc de périmètre UNIQUEMENT.
+    //
+    // Prouver que le client ne peut pas détourner la sortie de la passerelle
+    // demande de voir ce que l'amont a REÇU, pas ce que la passerelle prétend
+    // avoir envoyé. Sans ce miroir, l'assertion « l'amont est épinglé » se
+    // déduit d'une lecture de code ; avec lui, elle se mesure.
+    //
+    // C'est une commodité de banc dans un stand-in de monolithe qui n'est
+    // joignable que par la passerelle (aucun port publié hors mesure) — pas un
+    // point d'accès qu'un vrai amont devrait offrir.
+    $path === '/__echo' => [
+        'served_by' => 'legacy-monolith',
+        'host' => $_SERVER['HTTP_HOST'] ?? null,
+        'x_forwarded_for' => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? null,
+        'x_forwarded_host' => $_SERVER['HTTP_X_FORWARDED_HOST'] ?? null,
+        'x_forwarded_proto' => $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? null,
+        'forwarded' => $_SERVER['HTTP_FORWARDED'] ?? null,
+        'x_real_ip' => $_SERVER['HTTP_X_REAL_IP'] ?? null,
+        'request_uri' => $_SERVER['REQUEST_URI'] ?? null,
+        // En-têtes d'identité arbitraires : la passerelle ne les réécrit PAS
+        // (elle ne réécrit que la famille de transfert), et le banc doit pouvoir
+        // le constater plutôt que de le supposer. Un amont qui accorderait sa
+        // confiance à l'un d'eux ferait confiance au client, pas à la
+        // passerelle — c'est une mise en garde d'exploitation, et elle se mesure.
+        'x_authenticated_user' => $_SERVER['HTTP_X_AUTHENTICATED_USER'] ?? null,
+        'x_waffle_assertion' => $_SERVER['HTTP_X_WAFFLE_ASSERTION'] ?? null,
+    ],
     str_starts_with($path, '/api/products/') => [
         'id' => basename($path),
         'name' => 'Produit ' . basename($path),

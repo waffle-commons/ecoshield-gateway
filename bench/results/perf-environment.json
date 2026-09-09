@@ -1,0 +1,58 @@
+{
+  "captured_at": "2026-09-09T08:32:57.422689+00:00",
+  "host": {
+    "model": "MacBookPro15,1",
+    "logical_cpus": 12,
+    "physical_cpus": 6,
+    "memory_bytes": 17179869184,
+    "os": "Darwin 24.6.0",
+    "product_version": "15.7.9",
+    "somaxconn": "128",
+    "tcp_msl": "15000",
+    "ulimit_n": "1048576"
+  },
+  "docker": {
+    "server_version": "29.7.2",
+    "vm_cpus": 12,
+    "vm_memory_bytes": 14651039744
+  },
+  "k6": "k6 v2.0.0 (commit/devel, go1.26.3, darwin/amd64)",
+  "containers": {
+    "ecoshield-gateway": {
+      "nano_cpus": 2000000000,
+      "cpu_quota": 0,
+      "memory_bytes": 1073741824
+    },
+    "ecoshield-legacy-fpm": {
+      "nano_cpus": 2000000000,
+      "cpu_quota": 0,
+      "memory_bytes": 1073741824
+    },
+    "ecoshield-legacy-nginx": {
+      "nano_cpus": 500000000,
+      "cpu_quota": 0,
+      "memory_bytes": 268435456
+    },
+    "ecoshield-redis": {
+      "nano_cpus": 500000000,
+      "cpu_quota": 0,
+      "memory_bytes": 268435456
+    }
+  },
+  "frankenphp": {
+    "num_threads": 4,
+    "workers": [
+      {
+        "file_name": "./public/index.php",
+        "num": 2
+      }
+    ]
+  },
+  "gateway_env": {
+    "WORKER_COUNT": "2",
+    "PHP_NUM_THREADS": "4",
+    "MAX_REQUESTS": "1000000",
+    "ECOSHIELD_DIAGNOSTICS": "1",
+    "APP_ENV": "prod"
+  }
+}
