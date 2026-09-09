@@ -1,0 +1,100 @@
+name: 🐛 Anomalie
+description: Un comportement qui s'écarte de ce que la documentation décrit
+labels: ["bug", "à trier"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de rapporter. Les champs ci-dessous ne sont pas
+        de la formalité : sans le pilier concerné et l'image utilisée, un rapport
+        de passerelle est presque toujours inexploitable.
+
+        **Faille de sécurité : ne remplissez pas ce formulaire.** Voir
+        [SECURITY.md](../blob/main/SECURITY.md).
+
+  - type: dropdown
+    id: pillar
+    attributes:
+      label: Quel pilier est concerné ?
+      description: >-
+        Les trois chemins traversent des composants différents ; savoir lequel
+        écarte d'emblée les deux tiers du code.
+      options:
+        - "Interception (Rescue) — route servie par la passerelle"
+        - "Proxy — trafic relayé vers le monolithe"
+        - "Bouclier (Shield) — mise en cache des réponses"
+        - "Démarrage / configuration"
+        - "Banc de mesure"
+        - "Je ne sais pas"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: image
+    attributes:
+      label: Quelle image ?
+      description: >-
+        L'image de développement monte les sources et revalide l'opcache : elle
+        se comporte différemment, surtout pour tout ce qui touche aux
+        performances.
+      options:
+        - "Défaut (production)"
+        - "Développement (docker-compose.dev.yml)"
+        - "Mesure (docker-compose.bench.yml)"
+        - "Hors Docker"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportement attendu, et où il est documenté
+      description: >-
+        Un lien vers la ligne du README, de SECURITY.md ou du code qui décrit ce
+        que vous attendiez. Si rien ne le documente, c'est peut-être une
+        évolution plutôt qu'une anomalie — et c'est une information utile.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportement observé
+      description: >-
+        Sortie brute plutôt que résumé. Pour une réponse HTTP, `curl -i` : les
+        en-têtes portent souvent le diagnostic, `X-EcoShield-Cache` en tête.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Les commandes exactes, depuis un dépôt fraîchement cloné.
+      value: |
+        ```bash
+        docker compose up -d
+        curl -i localhost:8099/...
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Environnement
+      value: |
+        - Version d'EcoShield (tag ou SHA) :
+        - Version de `waffle-commons` (`composer show | grep waffle`) :
+        - Docker / Docker Compose :
+        - Système hôte, nombre de vCPU :
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Journaux
+      description: "`docker compose logs gateway --tail 50`"
+      render: text
