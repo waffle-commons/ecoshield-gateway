@@ -26,6 +26,26 @@ def slope(points: list[tuple[float, float]]) -> tuple[float, float]:
     return m, my - m * mx
 
 
+def slope_stderr(points: list[tuple[float, float]]) -> float:
+    """Erreur-type de la pente — ce qui transforme un chiffre en affirmation.
+
+    Une pente nue ne dit pas si elle se distingue de zéro : sur des relevés
+    bruités par l'allocateur, +0.2 Mio/h peut n'être que du bruit. L'erreur-type
+    donne la demi-largeur de l'intervalle de confiance, donc la borne réelle de
+    détection : en dessous, une fuite est indiscernable d'une mémoire stable.
+    """
+    n = len(points)
+    if n < 3:
+        return float("inf")
+    m, b0 = slope(points)
+    mx = sum(p[0] for p in points) / n
+    sxx = sum((p[0] - mx) ** 2 for p in points)
+    if sxx == 0:
+        return float("inf")
+    sse = sum((y - (m * x + b0)) ** 2 for x, y in points)
+    return ((sse / (n - 2)) / sxx) ** 0.5
+
+
 def main(path: str) -> int:
     lines = pathlib.Path(path).read_text().splitlines()[1:]
     gw: list[tuple[float, float]] = []
@@ -48,17 +68,19 @@ def main(path: str) -> int:
     span_h = (gw[-1][0] - gw[0][0]) / 3600.0
     print("# Endurance — dérive mémoire\n")
     print(f"Durée observée : **{span_h:.2f} h** · {len(gw)} relevés\n")
-    print("| Conteneur | Départ (MiB) | Fin (MiB) | Δ (MiB) | Pente (MiB/h) |")
-    print("|---|---|---|---|---|")
+    print("| Conteneur | Départ (MiB) | Fin (MiB) | Δ (MiB) | Pente (MiB/h) | IC 95 % |")
+    print("|---|---|---|---|---|---|")
     for label, series in (("`ecoshield-gateway`", gw), ("`ecoshield-legacy-fpm`", fpm)):
         m, _ = slope(series)
+        ci = 1.96 * slope_stderr(series) * 3600
         print(
             f"| {label} | {series[0][1]:.1f} | {series[-1][1]:.1f} | "
-            f"{series[-1][1] - series[0][1]:+.1f} | {m * 3600:+.2f} |"
+            f"{series[-1][1] - series[0][1]:+.1f} | {m * 3600:+.2f} | ±{ci:.2f} |"
         )
 
     m_gw, _ = slope(gw)
     per_hour = m_gw * 3600
+    ci_gw = 1.96 * slope_stderr(gw) * 3600
     print()
 
     # Une fuite est une pente POSITIVE. Une pente négative veut dire que la
@@ -85,11 +107,22 @@ def main(path: str) -> int:
             f"l'allocateur — aucune fuite décelable sur cette fenêtre.\n"
         )
 
+    # La borne honnête n'est pas la pente mesurée mais la demi-largeur de son
+    # intervalle de confiance : c'est le seuil en dessous duquel une croissance
+    # réelle serait noyée dans le bruit de cette fenêtre-ci.
+    zero_consistent = abs(per_hour) <= ci_gw
     print(
-        f"> Portée : sur {span_h:.2f} h, une fuite plus lente que "
-        f"~{max(abs(per_hour), 0.5):.1f} MiB/h resterait indétectable. Seul "
-        f"l'allongement de la fenêtre resserre cette borne — beta6 a soaké 3 h par "
-        f"moteur pour la descendre à ~1.7 MiB/h.\n"
+        f"> **Borne de détection : ±{ci_gw:.2f} MiB/h** (IC 95 %, {len(gw)} relevés "
+        f"sur {span_h:.2f} h). "
+        + (
+            "La pente mesurée est compatible avec zéro : sur cette fenêtre, la "
+            "mémoire est plate au bruit près. "
+            if zero_consistent
+            else "La pente mesurée sort de cette borne : la croissance est réelle. "
+        )
+        + f"Une fuite plus lente que {ci_gw:.2f} MiB/h resterait indétectable ici ; "
+        f"seul l'allongement de la fenêtre resserre la borne (beta6, BENCH-03 : "
+        f"3 h par moteur).\n"
     )
     return 0
 
