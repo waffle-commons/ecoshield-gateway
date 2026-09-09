@@ -25,9 +25,27 @@
 # pente négative qui ne décrivait rien (`bench/results/SOAK-unsettled.md`). On
 # mesure une dérive à partir d'un état stabilisé, jamais la décrue d'un pic.
 #
-#   bench/scripts/perf-run.sh all
-#   RATE=300 DURATION=3m bench/scripts/perf-run.sh soak
-#   bench/scripts/perf-run.sh perimeter
+# Modes :
+#
+#   full       soak + échelle + courbe mémoire + périmètre (la campagne complète)
+#   soak       endurance à débit constant — l'invariant mémoire
+#   ladder     échelle de débit (modèle ouvert) — où la latence se dégrade
+#   memscale   empreinte en fonction de la concurrence (modèle fermé)
+#   perimeter  assertions négatives de sécurité
+#   all        soak + périmètre (la campagne courte)
+#
+#   bench/scripts/perf-run.sh full
+#   RATE=300 DURATION=3h bench/scripts/perf-run.sh soak
+#   RATES=50,100,200,400 STEP_DURATION=2m bench/scripts/perf-run.sh ladder
+#   VUS_STEPS=8,16,32,64 bench/scripts/perf-run.sh memscale
+#
+# La campagne complète suppose le monolithe Symfony en place — sans quoi le
+# stand-in synthétique répond, ce qui reste valide mais ne mesure pas la même
+# chose (voir bench/legacy-symfony/bootstrap.sh) :
+#
+#   bench/legacy-symfony/bootstrap.sh
+#   docker compose -f docker-compose.yml -f docker-compose.perf.yml \
+#                  -f docker-compose.symfony.yml up -d --build
 # =============================================================================
 set -euo pipefail
 
@@ -45,6 +63,12 @@ DURATION="${DURATION:-3m}"
 WARMUP="${WARMUP:-30s}"
 SETTLE="${SETTLE:-45}"
 REPEATS="${REPEATS:-20}"
+
+# Échelle de débit (modèle ouvert) et courbe mémoire (modèle fermé).
+RATES="${RATES:-50,100,200,400,800}"
+STEP_DURATION="${STEP_DURATION:-2m}"
+VUS_STEPS="${VUS_STEPS:-8,16,32,64,128}"
+LADDER_WORKLOAD="${LADDER_WORKLOAD:-rescue}"
 
 OUT="${OUT:-bench/results}"
 mkdir -p "$OUT"
@@ -208,6 +232,83 @@ run_soak() {
 }
 
 # ---------------------------------------------------------------------------
+# Échelle de débit — où la latence se dégrade, et où le GÉNÉRATEUR décroche
+# ---------------------------------------------------------------------------
+run_ladder() {
+  say "préchauffe (${WARMUP})"
+  k6 run --quiet -e TARGET="$TARGET" -e RATE=100 -e DURATION="$WARMUP" \
+    bench/k6/lib/warmup.js >/dev/null 2>&1 || true
+
+  say "repos (${SETTLE}s)"
+  sleep "$SETTLE"
+
+  say 'démarrage des relevés mémoire'
+  bench/scripts/sample-memory.sh "$GATEWAY_CT" "$OUT/perf-ladder-rss-gateway.csv" 5 &
+  local rss_gw=$!
+  bench/scripts/sample-memory.sh "$FPM_CT" "$OUT/perf-ladder-rss-fpm.csv" 5 &
+  local rss_fpm=$!
+  trap 'kill "$rss_gw" "$rss_fpm" 2>/dev/null || true' EXIT
+
+  say "échelle : [${RATES}] req/s x ${STEP_DURATION}, charge « ${LADDER_WORKLOAD} »"
+  # Une seule exécution k6 : les marches sont découpées par ÉTIQUETTE, pas par
+  # horodatage, donc aucun redécoupage a posteriori n'est nécessaire.
+  k6 run \
+    -e TARGET="$TARGET" -e LEGACY_TARGET="$LEGACY_TARGET" \
+    -e RATES="$RATES" -e STEP_DURATION="$STEP_DURATION" \
+    -e WORKLOAD="$LADDER_WORKLOAD" \
+    bench/k6/scenarios/ladder.js 2>&1 | tee "$OUT/perf-ladder-k6.txt"
+
+  kill "$rss_gw" "$rss_fpm" 2>/dev/null || true
+  trap - EXIT
+}
+
+# ---------------------------------------------------------------------------
+# Courbe mémoire — l'empreinte en fonction de la CONCURRENCE
+# ---------------------------------------------------------------------------
+run_memscale() {
+  say "préchauffe (${WARMUP})"
+  k6 run --quiet -e TARGET="$TARGET" -e RATE=100 -e DURATION="$WARMUP" \
+    bench/k6/lib/warmup.js >/dev/null 2>&1 || true
+
+  # UNE marche à la fois, et UN sujet à la fois.
+  #
+  # Les deux sujets ne sont jamais chargés ensemble : ils se disputeraient les
+  # cœurs, et la courbe mesurerait la contention au lieu de l'empreinte. Chaque
+  # marche est aussi une exécution k6 distincte, avec son propre relevé RSS —
+  # ce qui évite d'avoir à retrouver les frontières des marches dans un CSV
+  # continu, exercice d'horodatage où une erreur ne se voit pas.
+  local subject vus label rss_csv sampler container
+  for subject in rescue legacy; do
+    container="$GATEWAY_CT"
+    if [[ "$subject" == 'legacy' ]]; then container="$FPM_CT"; fi
+
+    for vus in ${VUS_STEPS//,/ }; do
+      label="memscale-${subject}-c${vus}"
+      rss_csv="$OUT/perf-${label}-rss.csv"
+
+      say "repos (${SETTLE}s) avant la marche ${subject} c=${vus}"
+      # Le repos AVANT chaque marche est ce qui rend les points comparables :
+      # sans lui, chaque marche démarrerait sur le pic laissé par la précédente
+      # et la courbe monterait toute seule.
+      sleep "$SETTLE"
+
+      bench/scripts/sample-memory.sh "$container" "$rss_csv" 3 &
+      sampler=$!
+
+      printf '  %-10s c=%-4s ' "$subject" "$vus"
+      k6 run --quiet \
+        -e TARGET="$TARGET" -e LEGACY_TARGET="$LEGACY_TARGET" \
+        -e SUBJECT="$subject" -e VUS_STEPS="$vus" \
+        -e STEP_DURATION="$STEP_DURATION" -e LABEL="$label" \
+        bench/k6/scenarios/memscale.js 2>&1 | grep -E 'latence|requêtes' || true
+
+      kill "$sampler" 2>/dev/null || true
+      wait "$sampler" 2>/dev/null || true
+    done
+  done
+}
+
+# ---------------------------------------------------------------------------
 # Le périmètre
 # ---------------------------------------------------------------------------
 run_perimeter() {
@@ -227,8 +328,15 @@ environment_snapshot
 case "$MODE" in
   soak)      run_soak ;;
   perimeter) run_perimeter ;;
+  ladder)    run_ladder ;;
+  memscale)  run_memscale ;;
   all)       run_soak; run_perimeter ;;
-  *) echo "usage: $0 [all|soak|perimeter]" >&2; exit 2 ;;
+  # La campagne complète, dans l'ordre où les phases doivent tomber : le soak en
+  # premier (c'est lui qui exige l'état le plus reposé), puis l'échelle, puis la
+  # courbe mémoire, et le périmètre en dernier — il est le seul dont le résultat
+  # ne dépend pas de l'état thermique ni de la mémoire de la machine.
+  full)      run_soak; run_ladder; run_memscale; run_perimeter ;;
+  *) echo "usage: $0 [full|all|soak|ladder|memscale|perimeter]" >&2; exit 2 ;;
 esac
 
 say 'analyse'

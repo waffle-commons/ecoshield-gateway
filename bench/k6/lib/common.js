@@ -92,6 +92,31 @@ export function metricValues(data, name) {
   return metric.values || metric;
 }
 
+// Convertit '2m' / '90s' / '1h30m' en secondes. Les scénarios à marches en ont
+// besoin pour calculer les `startTime` qui enchaînent les marches bout à bout :
+// k6 ne sait pas dire « démarre quand la précédente finit », il faut lui donner
+// un décalage absolu, donc savoir compter la durée d'une marche.
+export function durationToSeconds(d) {
+  const re = /(\d+(?:\.\d+)?)(h|m|s|ms)/g;
+  let total = 0;
+  let matched = false;
+  let m;
+  while ((m = re.exec(String(d))) !== null) {
+    matched = true;
+    const v = parseFloat(m[1]);
+    if (m[2] === 'h') total += v * 3600;
+    else if (m[2] === 'm') total += v * 60;
+    else if (m[2] === 's') total += v;
+    else total += v / 1000;
+  }
+  if (!matched) {
+    const bare = parseFloat(String(d));
+    if (!Number.isNaN(bare)) return bare; // nombre nu = secondes
+    throw new Error(`Durée illisible : "${d}"`);
+  }
+  return total;
+}
+
 function num(v, digits = 2) {
   return v === undefined || v === null ? 'n/a' : Number(v).toFixed(digits);
 }

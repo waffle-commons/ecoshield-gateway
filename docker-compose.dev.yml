@@ -14,6 +14,16 @@
 #   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 services:
   gateway:
+    # Nom d'image DISTINCT de celui de la pile par défaut.
+    #
+    # Sans lui, les deux surcharges construisent le même tag
+    # (`ecoshield-gateway-gateway`) depuis deux étages différents : une
+    # construction en mode mesure écrase alors l'image de développement, et la
+    # commande suivante échoue sur un « composer: not found » qui n'a aucun
+    # rapport apparent avec ce qu'on vient de faire. Les deux images ont des
+    # rôles opposés — l'une porte l'outillage, l'autre doit en être exempte —
+    # et rien ne justifie qu'elles partagent un nom.
+    image: ecoshield-gateway:dev
     build:
       target: dev
     environment:

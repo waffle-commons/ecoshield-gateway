@@ -372,6 +372,126 @@ def main(directory: str) -> int:
                 f"solide sur une fenêtre courte est le Δ observé, pas son extrapolation.\n"
             )
 
+    # --- échelle de débit --------------------------------------------------
+    for ladder_path in sorted(out.glob("perf-ladder-*.json")):
+        summary = json.loads(ladder_path.read_text())
+        workload = ladder_path.stem.replace("perf-ladder-", "")
+        rows = []
+        for name, m in summary.get("metrics", {}).items():
+            if not name.startswith("http_req_duration{scenario:rate_"):
+                continue
+            rate = int(name.split("rate_")[1].rstrip("}"))
+            d = m.get("values", m)
+            reqs = metric(summary, f"http_reqs{{scenario:rate_{rate}}}")
+            failed = metric(summary, f"http_req_failed{{scenario:rate_{rate}}}")
+            dropped = metric(summary, f"dropped_iterations{{scenario:rate_{rate}}}")
+            n_dropped = int(dropped.get("count") or 0)
+            achieved = reqs.get("rate")
+            rows.append((rate, achieved, d, failed, n_dropped))
+        if not rows:
+            continue
+        rows.sort()
+
+        print(f"## Échelle de débit — charge « {workload} »\n")
+        print(
+            "Modèle **ouvert** : le débit demandé est maintenu quoi qu'il arrive, "
+            "et c'est la latence qui encaisse. Un modèle fermé réduirait la charge "
+            "dès que le sujet ralentit, et un sujet qui ralentit paraîtrait sain.\n"
+        )
+        print("| Débit visé | Débit atteint | p50 | p95 | p99 | échecs | itérations perdues | Publiable |")
+        print("|---:|---:|---:|---:|---:|---:|---:|---|")
+        for rate, achieved, d, failed, n_dropped in rows:
+            ok = n_dropped == 0
+            print(
+                f"| {rate} req/s | {fmt(achieved)} | {fmt(d.get('med'))} | {fmt(d.get('p(95)'))} | "
+                f"{fmt(d.get('p(99)'))} | {fmt((failed.get('rate') or 0) * 100, 2)} % | "
+                f"{n_dropped} | {'oui' if ok else '**NON**'} |"
+            )
+        print()
+        blocked = [r for r, _, _, _, n in rows if n > 0]
+        print(
+            "> **La colonne « Publiable » n'est pas un avis, c'est une règle mécanique.** "
+            "k6 incrémente `dropped_iterations` quand son exécuteur ne parvient pas à "
+            "émettre à la cadence demandée — VUs tous occupés, ou générateur à court de "
+            "CPU. Une marche où ce compteur est non nul n'a pas subi la charge annoncée : "
+            "sa latence est celle d'un débit plus faible, et la publier comme un chiffre "
+            "de capacité serait un mensonge par omission. C'est ce garde-fou qui remplace, "
+            "sur une seule machine, la séparation physique du générateur et de son sujet.\n"
+        )
+        if blocked:
+            print(
+                f"> Marches écartées ici : **{', '.join(str(b) + ' req/s' for b in blocked)}**. "
+                "Au-delà, ce banc mesure son propre générateur. Un chiffre de capacité "
+                "au-dessus de ce seuil exige un générateur sur une machine distincte.\n"
+            )
+        else:
+            print(
+                "> Aucune marche écartée : le générateur a tenu la cadence sur toute "
+                "l'échelle, et chaque ligne décrit bien le sujet.\n"
+            )
+
+    # --- courbe mémoire ----------------------------------------------------
+    memscale = {}
+    for js in sorted(out.glob("perf-memscale-*.json")):
+        stem = js.stem  # perf-memscale-<subject>-c<N>
+        if "-c" not in stem:
+            continue
+        subject = stem.replace("perf-memscale-", "").rsplit("-c", 1)[0]
+        conc = int(stem.rsplit("-c", 1)[1])
+        summary = json.loads(js.read_text())
+        header, rows_csv = read_csv(out / f"{stem}-rss.csv")
+        rss = series(header, rows_csv, "rss_bytes")
+        peak = max((v for _, v in rss), default=None)
+        memscale.setdefault(subject, []).append((conc, summary, peak))
+
+    if memscale:
+        print("## Empreinte mémoire en fonction de la concurrence\n")
+        print(
+            "Modèle **fermé** ici, et c'est le seul endroit du harnais où il est "
+            "correct : ce qui décide du nombre d'enfants PHP-FPM vivants n'est pas le "
+            "débit d'arrivée mais le nombre de requêtes SIMULTANÉMENT en vol, et seul "
+            "`constant-vus` fixe cette grandeur.\n"
+        )
+        labels = {
+            "rescue": "Passerelle (worker résident)",
+            "legacy": "Monolithe (PHP-FPM, un enfant par requête en vol)",
+        }
+        slopes = {}
+        for subject, points in sorted(memscale.items()):
+            points.sort()
+            print(f"### {labels.get(subject, subject)}\n")
+            print("| Concurrence | p50 | p95 | débit | RSS crête |")
+            print("|---:|---:|---:|---:|---:|")
+            xs, ys = [], []
+            for conc, summary, peak in points:
+                d = metric(summary, "http_req_duration")
+                reqs = metric(summary, "http_reqs")
+                peak_mib = peak / MIB if peak else None
+                if peak_mib is not None:
+                    xs.append(float(conc))
+                    ys.append(peak_mib)
+                print(
+                    f"| {conc} | {fmt(d.get('med'))} ms | {fmt(d.get('p(95)'))} ms | "
+                    f"{fmt(reqs.get('rate'))} req/s | {fmt(peak_mib)} Mio |"
+                )
+            print()
+            if len(xs) >= 2:
+                m, _ = slope(list(zip(xs, ys)))
+                slopes[subject] = m
+                print(f"Pente : **{m:+.3f} Mio par requête concurrente**.\n")
+
+        if "rescue" in slopes and "legacy" in slopes and slopes["rescue"] != 0:
+            ratio = slopes["legacy"] / slopes["rescue"] if slopes["rescue"] else None
+            print(
+                f"**La pente est le résultat, pas un facteur plat.** Le monolithe paie "
+                f"{slopes['legacy']:+.3f} Mio par requête concurrente, la passerelle "
+                f"{slopes['rescue']:+.3f}"
+                + (f" — soit une croissance {ratio:.1f}× plus lente" if ratio and ratio > 0 else "")
+                + ". Un facteur d'économie ne se lit qu'à une concurrence donnée, et "
+                "seulement à celle que LES DEUX camps soutiennent : `bench/BENCH-RESULT.md` "
+                "avait déjà tranché ce point, et rien ici ne le contredit.\n"
+            )
+
     # --- périmètre ---------------------------------------------------------
     perim_path = out / "perf-perimeter.json"
     if perim_path.is_file():

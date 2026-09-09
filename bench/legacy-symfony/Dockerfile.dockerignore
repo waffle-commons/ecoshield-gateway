@@ -1,0 +1,23 @@
+# Contexte de construction propre à cette image (BuildKit lit
+# `<chemin-du-Dockerfile>.dockerignore` en priorité sur celui de la racine).
+#
+# Le `.dockerignore` de la racine exclut `bench/` et `legacy/` pour garder le
+# contexte de la passerelle petit — et il doit continuer à le faire. Cette image
+# a précisément besoin de deux choses qui vivent là, d'où ce fichier dédié
+# plutôt qu'un assouplissement de la règle générale, qui alourdirait toutes les
+# autres constructions.
+#
+# On part de « tout exclure » pour que le contexte soit exactement ce qui est
+# listé ensuite, et rien d'autre : le `vendor/` de la passerelle, son `var/` et
+# son `.git` n'ont aucune raison de traverser le démon Docker pour construire un
+# monolithe de banc.
+*
+
+!bench/legacy-symfony/app
+!bench/legacy-symfony/php
+
+# Le pool FPM est PARTAGÉ avec le monolithe de démonstration, délibérément : les
+# deux variantes doivent avoir exactement la même capacité, sinon la comparaison
+# mesure un dimensionnement. Le référencer ici plutôt que d'en faire une copie
+# évite qu'ils divergent en silence.
+!legacy/php-fpm/www.conf

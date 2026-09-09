@@ -29,3 +29,10 @@ composer.phar
 # GitHub, pas un document du dépôt. Il duplique volontairement le CHANGELOG et le
 # README — le versionner créerait une troisième source à tenir à jour.
 /RELEASE.md
+
+# Monolithe Symfony du banc : généré par `bench/legacy-symfony/bootstrap.sh`,
+# des dizaines de mégaoctets de `vendor/`, reconstruit à l'identique depuis le
+# script et les stubs suivis. Même convention que `bench/engines/symfony-app/`
+# côté écosystème — on versionne la RECETTE, jamais le résultat de l'installation.
+/bench/legacy-symfony/app/
+/bench/legacy-symfony/.composer.phar
