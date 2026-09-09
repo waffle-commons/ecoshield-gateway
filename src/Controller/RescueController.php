@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use PDO;
 use Psr\Http\Message\ResponseInterface;
+use Throwable;
 use Waffle\Commons\Contracts\Config\ConfigInterface;
+use Waffle\Commons\Contracts\Data\Connection\RelationalConnectionPoolInterface;
 use Waffle\Commons\Contracts\Routing\Attribute\Route;
 use Waffle\Commons\Contracts\Routing\Constant as Routing;
 use Waffle\Commons\Contracts\Security\Attribute\PublicAccess;
@@ -75,6 +78,67 @@ final class RescueController extends BaseController
             'name' => 'Produit ' . $id,
             'served_by' => 'ecoshield-gateway',
             'note' => 'Route interceptée : servie depuis le worker, sans toucher au monolithe legacy.',
+        ]);
+    }
+
+    /**
+     * Route reprise qui sert de la VRAIE donnée.
+     *
+     * `product()` ci-dessus rend une charge utile statique et le dit : elle
+     * mesure le coût du CHEMIN. Elle ne peut pas, à elle seule, soutenir une
+     * comparaison avec un monolithe — un monolithe va chercher sa donnée, et
+     * comparer « boot + I/O » à « pas de boot, pas d'I/O » ne mesure pas une
+     * architecture, cela mesure la présence d'une requête SQL.
+     *
+     * Cette route-ci ferme l'écart : UNE lecture indexée, la même des deux côtés,
+     * sur la même base et la même ligne. Ce qui reste alors dans le delta est ce
+     * que le mode worker supprime réellement — le démarrage du framework — et
+     * plus le fait qu'un camp interroge une base et l'autre non.
+     *
+     * La requête est paramétrée (marqueur `?`, jamais de concaténation), et la
+     * connexion empruntée retourne au pool au reset de fin de requête.
+     *
+     * Un identifiant inconnu répond `200 {found: false}` et NON 404 : le banc
+     * compare des percentiles de latence, et mélanger deux statuts mélangerait
+     * deux distributions. C'est le même choix que la démo de lecture du squelette.
+     *
+     * @throws RenderingException
+     */
+    #[Route(path: 'api/users/{id}', methods: [Routing::METHOD_GET], name: 'user')]
+    #[PublicAccess]
+    public function user(string $id, RelationalConnectionPoolInterface $pool): ResponseInterface
+    {
+        try {
+            $pdo = $pool->acquire()->pdo();
+            $statement = $pdo->prepare('SELECT id, email, created_at FROM users WHERE id = ?');
+
+            $user = null;
+            if ($statement !== false && $statement->execute([$id])) {
+                // `PDOStatement::fetch()` est typé `mixed` : la frontière avec le
+                // pilote est l'un des rares endroits où le `mixed` est inhérent
+                // plutôt que subi. Il est annoté ICI, au plus près, et prouvé par
+                // le `is_array()` juste en dessous — plutôt que propagé plus loin.
+                /** @var array<string, scalar|null>|false $row */
+                $row = $statement->fetch(PDO::FETCH_ASSOC);
+                if (is_array($row)) {
+                    $user = $row;
+                }
+            }
+        } catch (Throwable) {
+            // Aucune base configurée, ou injoignable. 503 plutôt qu'une trace :
+            // la passerelle reste parfaitement capable de proxyfier et de servir
+            // son cache, et seule CETTE route est privée de sa source. C'est ce
+            // qui permet à la démonstration par défaut de tourner sans PostgreSQL.
+            return $this->jsonResponse(data: [
+                'error' => 'database_unavailable',
+                'detail' => 'Aucune source de données joignable pour cette route reprise.',
+            ], status: 503);
+        }
+
+        return $this->jsonResponse(data: [
+            'found' => $user !== null,
+            'user' => $user,
+            'served_by' => 'ecoshield-gateway',
         ]);
     }
 

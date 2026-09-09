@@ -18,9 +18,24 @@ ARG PHP_VERSION='8.3'
 
 FROM php:${PHP_VERSION}-fpm-alpine
 
-# opcache est le seul ajout à l'image de base, et il n'est pas optionnel : aucun
-# déploiement PHP de production ne s'en passe. Voir php/opcache.ini.
-RUN docker-php-ext-install opcache
+# Deux extensions, et pas une de plus.
+#
+#  - `opcache` : aucun déploiement PHP de production ne s'en passe, et son absence
+#    ferait recompiler chaque fichier à chaque requête (voir php/opcache.ini).
+#  - `pdo_pgsql` : la lecture indexée que le banc compare des deux côtés. Le
+#    MÊME pilote que la passerelle, sur la MÊME base — sans quoi la comparaison
+#    porterait sur deux chemins d'accès aux données plutôt que sur deux
+#    architectures d'exécution.
+#
+# `postgresql-dev` n'est nécessaire qu'à la COMPILATION et repart ensuite ; `libpq`
+# est la bibliothèque d'EXÉCUTION et doit rester. Les retirer toutes les deux
+# compile un `pdo_pgsql.so` parfaitement valide que PHP ne peut plus charger
+# (« Error loading shared library libpq.so.5 »), et Doctrine rapporte alors
+# « could not find driver » — un message qui ne pointe pas du tout vers la cause.
+RUN apk add --no-cache libpq \
+    && apk add --no-cache --virtual .build-deps postgresql-dev \
+    && docker-php-ext-install opcache pdo_pgsql \
+    && apk del .build-deps
 
 COPY bench/legacy-symfony/php/opcache.ini /usr/local/etc/php/conf.d/zz-bench.ini
 COPY legacy/php-fpm/www.conf /usr/local/etc/php-fpm.d/zz-bench.conf

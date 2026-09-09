@@ -30,6 +30,17 @@ services:
     environment:
       APP_ENV: prod
       APP_DEBUG: '0'
+      # LA MÊME base, LE MÊME jeu de lignes que la passerelle. C'est la condition
+      # pour que « lecture par la passerelle » et « lecture par le monolithe »
+      # soient comparables : deux bases distinctes compareraient deux caches
+      # disque, deux plans d'exécution et deux états de statistiques.
+      DB_HOST: 'bench-postgres'
+      DB_PORT: '5432'
+      DB_NAME: 'bench'
+      DB_USER: 'bench'
+      DB_PASSWORD: 'bench'
+    depends_on:
+      - bench-postgres
 
   legacy-nginx:
     # Configuration API-seule : toutes les requêtes vont au contrôleur frontal,

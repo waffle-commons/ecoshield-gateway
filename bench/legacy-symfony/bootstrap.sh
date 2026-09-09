@@ -54,7 +54,13 @@ PHP_VERSION="${PHP_VERSION:-8.3}"
 # Un squelette nu compile un conteneur minuscule et sous-estimerait le coût de
 # démarrage qu'on prétend mesurer ; validator et serializer sont présents dans
 # à peu près toutes les applications Symfony réelles.
-PACKAGES=(symfony/validator symfony/serializer-pack)
+#
+# doctrine/dbal + doctrine-bundle : la lecture indexée que le banc compare des
+# deux côtés. Le BUNDLE est nécessaire en plus de la bibliothèque — c'est lui qui
+# lit `config/packages/doctrine.yaml` et expose une `Connection` au conteneur ;
+# `doctrine/dbal` seul n'a aucune intégration Symfony. Pas d'ORM, délibérément :
+# voir l'en-tête du stub doctrine.yaml.
+PACKAGES=(symfony/validator symfony/serializer-pack doctrine/dbal doctrine/doctrine-bundle)
 
 step() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 

@@ -20,6 +20,11 @@ legacy_order:
     controller: App\Controller\LegacyController::order
     methods: [GET]
 
+legacy_user:
+    path: /api/users/{id}
+    controller: App\Controller\LegacyController::user
+    methods: [GET]
+
 legacy_catalogue:
     path: /api/catalogue
     controller: App\Controller\LegacyController::catalogue

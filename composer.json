@@ -46,6 +46,7 @@
         "waffle-commons/config": "^0.1.0-beta6",
         "waffle-commons/container": "^0.1.0-beta6",
         "waffle-commons/contracts": "^0.1.0-beta6",
+        "waffle-commons/data": "^0.1.0-beta6",
         "waffle-commons/error-handler": "^0.1.0-beta6",
         "waffle-commons/http": "^0.1.0-beta6",
         "waffle-commons/http-client": "^0.1.0-beta6",

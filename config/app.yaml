@@ -30,6 +30,24 @@ waffle:
     adapter: '%env(CACHE_ADAPTER)%'
     dsn: '%env(REDIS_DSN)%'
 
+  # Base de données des routes reprises (RFC-022).
+  #
+  # Entièrement optionnelle : le pool est paresseux, et sans `DB_HOST` aucune
+  # connexion n'est jamais ouverte — la passerelle démarre et sert le proxy et le
+  # Shield exactement comme avant. Seule la route de lecture reprise répond alors
+  # 503, ce qui est la réponse honnête d'une reprise privée de sa source.
+  database:
+    driver: '%env(DB_DRIVER)%'
+    host: '%env(DB_HOST)%'
+    port: '%env(DB_PORT)%'
+    database: '%env(DB_NAME)%'
+    username: '%env(DB_USER)%'
+    password: '%env(DB_PASSWORD)%'
+    # Connexions par WORKER, pas par instance : chaque worker porte son propre
+    # pool. Le total ouvert vaut donc WORKER_COUNT x pool_size, et c'est ce
+    # produit qu'il faut confronter au `max_connections` du serveur.
+    pool_size: '%env(DB_POOL_SIZE)%'
+
 gateway:
   # Le monolithe legacy à protéger. Fixé par l'exploitant, jamais par le client.
   upstream: '%env(UPSTREAM_URL)%'

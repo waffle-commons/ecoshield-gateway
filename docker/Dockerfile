@@ -14,11 +14,22 @@ ENV APP_ENV=prod \
     SERVER_NAME=":80" \
     WORKER_COUNT=4
 
-# Pas de pilote de base de données : la passerelle n'en ouvre aucune. Ce qui
-# n'est pas installé ne peut pas être exploité, et l'image reste petite.
+# Un SEUL pilote de base de données, et il est arrivé tard.
+#
+# La passerelle n'en ouvrait aucun, et l'argument tenait : ce qui n'est pas
+# installé ne peut pas être exploité. Il ne tient plus dès lors qu'une route
+# « reprise » sert de la vraie donnée — ce que `RescueController` annonçait
+# depuis le début (« une reprise réelle irait chercher la donnée via
+# waffle-commons/data »), et ce qu'un Strangler Fig finit toujours par faire :
+# reprendre une route sans reprendre ses données ne reprend rien.
+#
+# La surface reste donc minimale et délibérée : `pdo_pgsql` seul, aucun autre
+# moteur. Le pool est par ailleurs PARESSEUX — sans `DB_HOST`, aucune connexion
+# n'est jamais ouverte et la démonstration par défaut garde exactement son
+# empreinte d'avant.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        git unzip libyaml-dev \
-    && install-php-extensions opcache intl yaml redis \
+        git unzip libyaml-dev libpq-dev \
+    && install-php-extensions opcache intl yaml redis pdo_pgsql \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY docker/frankenphp/Caddyfile /etc/caddy/Caddyfile

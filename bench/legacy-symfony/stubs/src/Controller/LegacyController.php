@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Doctrine\DBAL\Connection;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -29,6 +30,21 @@ use Symfony\Component\HttpFoundation\Request;
  */
 final class LegacyController
 {
+    /**
+     * Connexion injectée par le CONSTRUCTEUR, et non en argument d'action.
+     *
+     * L'injection de services dans les arguments d'une action suppose que le
+     * contrôleur porte le tag `controller.service_arguments`. Le squelette
+     * Symfony 5.4 ne le pose PAS : son `services.yaml` se contente d'enregistrer
+     * `App\` en autowiring, sans bloc dédié aux contrôleurs. Une action typée
+     * `Connection $connection` échoue alors à l'exécution, avec un message qui
+     * parle de valeur manquante plutôt que de tag absent.
+     *
+     * Le constructeur, lui, est autowiré par la seule déclaration `App\` — sans
+     * dépendre d'un tag que le squelette pourrait ou non poser.
+     */
+    public function __construct(private readonly Connection $connection) {}
+
     /** Sonde de vivacité — utilisée par le harnais, jamais par la mesure. */
     public function health(): JsonResponse
     {
@@ -99,6 +115,37 @@ final class LegacyController
         $response->setMaxAge(30);
 
         return $response;
+    }
+
+    /**
+     * Lecture indexée — la contrepartie EXACTE de la route reprise.
+     *
+     * C'est la comparaison qui compte désormais : la même requête, sur la même
+     * base, la même ligne, des deux côtés. La passerelle exécute
+     * `SELECT ... WHERE id = ?` sur PDO ; le monolithe fait de même sur DBAL,
+     * après avoir reconstruit son noyau. Ce qui subsiste dans l'écart est le coût
+     * du démarrage — plus le fait qu'un camp interroge une base et l'autre non.
+     *
+     * Requête paramétrée, jamais de concaténation. Réponse `200 {found:false}`
+     * sur identifiant inconnu plutôt que 404, pour que le banc ne mélange pas
+     * deux distributions de latence sous un même percentile.
+     *
+     * La réponse reste PRIVÉE (défaut de Symfony) : une lecture par identifiant
+     * n'est pas mutualisable entre clients, et un cache de passerelle qui la
+     * partagerait serait une fuite de données. Seul `catalogue()` est public.
+     */
+    public function user(string $id): JsonResponse
+    {
+        $row = $this->connection
+            ->executeQuery('SELECT id, email, created_at FROM users WHERE id = ?', [$id])
+            ->fetchAssociative();
+
+        return new JsonResponse([
+            'found' => $row !== false,
+            'user' => $row === false ? null : $row,
+            'served_by' => 'legacy-symfony',
+            'peak_memory_kb' => (int) round(memory_get_peak_usage(true) / 1024),
+        ]);
     }
 
     /**

@@ -6,6 +6,7 @@ namespace AppTests\Controller;
 
 use App\Controller\RescueController;
 use AppTests\Helper\StubConfig;
+use AppTests\Helper\StubConnectionPool;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -51,6 +52,59 @@ final class RescueControllerTest extends TestCase
         $payload = json_decode((string) $response->getBody(), associative: true, flags: JSON_THROW_ON_ERROR);
         self::assertSame('42', $payload['id']);
         self::assertSame('ecoshield-gateway', $payload['served_by']);
+    }
+
+    #[Test]
+    public function a_rescued_db_route_returns_the_seeded_row(): void
+    {
+        $pool = new StubConnectionPool([
+            ['id' => 'abc-123', 'email' => 'user1@bench.ecoshield.local'],
+        ]);
+
+        $response = $this->controller()->user('abc-123', $pool);
+
+        self::assertSame(200, $response->getStatusCode());
+
+        /** @var array{found: bool, user: array{id: string, email: string}|null, served_by: string} $payload */
+        $payload = json_decode((string) $response->getBody(), associative: true, flags: JSON_THROW_ON_ERROR);
+        self::assertTrue($payload['found']);
+        self::assertNotNull($payload['user']);
+        self::assertSame('user1@bench.ecoshield.local', $payload['user']['email']);
+        self::assertSame('ecoshield-gateway', $payload['served_by']);
+    }
+
+    #[Test]
+    public function an_unknown_id_is_a_200_not_a_404(): void
+    {
+        // Délibéré, et c'est une contrainte de MESURE : le banc compare des
+        // percentiles de latence, et deux statuts différents mélangeraient deux
+        // distributions sous un même chiffre.
+        $response = $this->controller()->user('inconnu', new StubConnectionPool());
+
+        self::assertSame(200, $response->getStatusCode());
+
+        /** @var array{found: bool, user: null} $payload */
+        $payload = json_decode((string) $response->getBody(), associative: true, flags: JSON_THROW_ON_ERROR);
+        self::assertFalse($payload['found']);
+        self::assertNull($payload['user']);
+    }
+
+    #[Test]
+    public function an_unreachable_database_degrades_to_503_and_never_leaks(): void
+    {
+        // Sans base configurée, la passerelle reste parfaitement capable de
+        // proxyfier et de servir son cache : seule CETTE route est privée de sa
+        // source. C'est ce qui permet à la démonstration par défaut de tourner
+        // sans PostgreSQL.
+        $response = $this->controller()->user('abc-123', new StubConnectionPool(unreachable: true));
+
+        self::assertSame(503, $response->getStatusCode());
+
+        $body = (string) $response->getBody();
+        self::assertStringContainsString('database_unavailable', $body);
+        // Aucune trace, aucun DSN, aucun message du pilote : un 503 qui raconte
+        // la topologie interne est une fuite d'information.
+        self::assertStringNotContainsString('no healthy connection', $body);
     }
 
     #[Test]

@@ -1,0 +1,22 @@
+# DBAL SEUL — pas d'ORM, délibérément.
+#
+# La recette de doctrine-bundle génère un fichier contenant une section `orm:`,
+# qui fait échouer le vidage de cache tant que `doctrine/orm` est absent. D'où
+# l'installation `--no-scripts` dans bootstrap.sh, et ce stub qui remplace le
+# fichier généré.
+#
+# Pourquoi pas d'ORM : le banc compare UNE lecture indexée de part et d'autre. La
+# passerelle exécute un `SELECT ... WHERE id = ?` sur PDO ; donner un ORM au seul
+# monolithe mesurerait l'hydratation d'entités, pas l'architecture d'exécution.
+# Un ORM est un choix applicatif que les deux camps pourraient faire ou non — il
+# n'appartient pas à la variable étudiée.
+doctrine:
+    dbal:
+        driver: 'pdo_pgsql'
+        host: '%env(DB_HOST)%'
+        port: '%env(int:DB_PORT)%'
+        dbname: '%env(DB_NAME)%'
+        user: '%env(DB_USER)%'
+        password: '%env(DB_PASSWORD)%'
+        charset: utf8
+        server_version: '17'

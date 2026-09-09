@@ -17,6 +17,7 @@
 // `handleSummary` unique pour que tous les résultats aient la même forme.
 
 import http from 'k6/http';
+import crypto from 'k6/crypto';
 
 // L'hôte, pas le réseau compose : le port publié par la passerelle.
 export const BASE_URL = __ENV.TARGET || 'http://localhost:8099';
@@ -54,7 +55,50 @@ export const workloads = {
   shield: () => http.get(`${BASE_URL}/api/catalogue`, { tags: { path: 'shield' } }),
   proxy: (unique) => http.get(`${BASE_URL}/api/orders/7?nocache=${unique}`, { tags: { path: 'proxy' } }),
   legacy: () => http.get(`${LEGACY_URL}/api/products/42`, { tags: { path: 'legacy' } }),
+
+  // --- Les deux charges qui portent désormais la comparaison ---------------
+  // Même requête, même base, même ligne, de part et d'autre. C'est le couple qui
+  // remplace « statique contre statique » : tant que le monolithe interrogeait
+  // une base et la passerelle non, l'écart mesuré contenait le coût d'un SELECT
+  // et pas seulement celui d'un démarrage de framework.
+  dbread: () => http.get(`${BASE_URL}/api/users/${randomSeededId()}`, { tags: { path: 'dbread' } }),
+  legacydb: () => http.get(`${LEGACY_URL}/api/users/${randomSeededId()}`, { tags: { path: 'legacydb' } }),
 };
+
+// ---------------------------------------------------------------------------
+// Dérivation des identifiants — DOIT suivre bench/sql/init.sql à la lettre
+// ---------------------------------------------------------------------------
+// Le jeu de données est amorcé avec des identifiants dérivés, de sorte que k6
+// puisse en calculer un sans jamais interroger la base :
+//
+//   h  = md5('bench-user-' + n)   pour n de 1 à 10000
+//   id = h découpé en 8-4-4-4-12
+//
+// Le banc écosystème consigne une panne exactement ici : une première version
+// dérivait `md5(String(n))`, si bien que TOUTE lecture manquait sa ligne. Le
+// camp qui répondait « 200 found:false » masquait le problème, celui qui
+// répondait 404 le révélait — et les deux mesuraient un index qui ne rend rien.
+// La règle qui en découle : après toute modification d'un côté, vérifier qu'une
+// lecture trouve bien sa ligne AVANT de publier le moindre chiffre.
+export const SEEDED_ROWS = 10000;
+
+export function existingId(rowNumber) {
+  const hex = crypto.md5(`bench-user-${rowNumber}`, 'hex');
+  return (
+    hex.slice(0, 8) + '-' +
+    hex.slice(8, 12) + '-' +
+    hex.slice(12, 16) + '-' +
+    hex.slice(16, 20) + '-' +
+    hex.slice(20)
+  );
+}
+
+// Un identifiant tiré au hasard dans le jeu amorcé. Le tirage est délibéré :
+// frapper toujours la même ligne mesurerait un cache de page PostgreSQL chaud
+// d'une seule entrée, pas une lecture indexée.
+export function randomSeededId() {
+  return existingId(1 + Math.floor(Math.random() * SEEDED_ROWS));
+}
 
 // ---------------------------------------------------------------------------
 // Résumé — un JSON par scénario, dans bench/results/

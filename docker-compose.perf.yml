@@ -50,6 +50,22 @@ services:
       # Ouvre `/__ecoshield/memory`. Fermée partout ailleurs, y compris dans le
       # compose par défaut : c'est une sonde de banc, pas un point d'accès.
       ECOSHIELD_DIAGNOSTICS: '1'
+      # Base de données du banc. Le pool est PARESSEUX : sans ces variables, la
+      # passerelle démarre exactement comme avant et la route de lecture répond
+      # 503 sans jamais tenter de connexion. C'est ce qui permet d'ajouter une
+      # base au banc sans alourdir la démonstration par défaut.
+      DB_DRIVER: 'pgsql'
+      DB_HOST: 'bench-postgres'
+      DB_PORT: '5432'
+      DB_NAME: 'bench'
+      DB_USER: 'bench'
+      DB_PASSWORD: 'bench'
+      # Taille du pool par worker. Deux workers x 4 connexions = 8 au plus, très
+      # en dessous des 100 connexions par défaut de PostgreSQL : le banc ne doit
+      # jamais mesurer une file d'attente côté serveur de base.
+      DB_POOL_SIZE: '4'
+    depends_on:
+      - bench-postgres
 
   # Plafonné à la même capacité que la passerelle. Le monolithe n'est pas le
   # sujet de cette campagne, mais le laisser illimité le rendrait capable de
@@ -71,3 +87,41 @@ services:
   redis:
     cpus: 0.5
     mem_limit: 256m
+
+  # La base partagée par LES DEUX camps.
+  #
+  # Le même serveur, le même jeu de 10 000 lignes, la même requête : sans cela,
+  # comparer une lecture de la passerelle à une lecture du monolithe comparerait
+  # deux bases. Elle est délibérément DIMENSIONNÉE LARGE et non bornée aussi
+  # serré que les sujets — c'est une infrastructure partagée, et la brider ferait
+  # d'elle le goulot d'étranglement commun, ce qui écraserait précisément l'écart
+  # que la campagne cherche à mesurer. Même choix que `bench-postgres` côté
+  # écosystème.
+  bench-postgres:
+    image: postgres:17-alpine
+    container_name: ecoshield-postgres
+    cpus: 2
+    mem_limit: 1g
+    environment:
+      POSTGRES_DB: 'bench'
+      POSTGRES_USER: 'bench'
+      POSTGRES_PASSWORD: 'bench'
+      # Le banc n'a aucune donnée à préserver : désactiver la synchronisation
+      # sur disque enlève la latence du stockage de l'hôte (virtiofs sur macOS)
+      # de la mesure. On veut le coût de la REQUÊTE, pas celui du disque de la VM.
+      POSTGRES_INITDB_ARGS: '--nosync'
+    command:
+      - 'postgres'
+      - '-c'
+      - 'fsync=off'
+      - '-c'
+      - 'synchronous_commit=off'
+      - '-c'
+      - 'full_page_writes=off'
+    volumes:
+      - ./bench/sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U bench -d bench']
+      interval: 5s
+      timeout: 3s
+      retries: 10

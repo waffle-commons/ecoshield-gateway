@@ -1,0 +1,31 @@
+# Déclaration de services — celle qu'une application Symfony réelle possède.
+#
+# Le squelette 5.4 nu enregistre `App\` en autowiring et s'arrête là. Il ne pose
+# PAS le bloc `App\Controller\` avec le tag `controller.service_arguments`, que
+# les recettes ajoutent dès qu'un projet a de vrais contrôleurs. Son absence
+# produit deux échecs successifs, dont aucun message ne nomme la cause :
+#
+#   1. sans constructeur, un service injecté en ARGUMENT D'ACTION est refusé
+#      (« requires that you provide a value for the "$connection" argument ») ;
+#   2. avec un constructeur, le contrôleur devient un service à part entière et
+#      le résolveur ne peut plus l'instancier lui-même (« cannot be fetched from
+#      the container because it is private »).
+#
+# Le tag règle les deux, et c'est la configuration que tout projet Symfony de
+# production porte. Le stub la rétablit plutôt que de contourner le problème en
+# rendant le contrôleur public ou en lui retirant ses dépendances.
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    App\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']

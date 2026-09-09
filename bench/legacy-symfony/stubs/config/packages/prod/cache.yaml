@@ -1,0 +1,25 @@
+# Cache applicatif — la configuration d'un déploiement de production.
+#
+# ## Ce qui est activé, et pourquoi
+#
+# `cache.app` sur un adaptateur réel (système de fichiers) plutôt que sur le
+# défaut de développement : une application de production met en cache. Laisser
+# ce pool sur un adaptateur volatil ferait payer au monolithe un coût qu'aucun
+# exploitant ne paie, et gonflerait artificiellement l'écart mesuré.
+#
+# ## Ce qui n'est PAS activé, et c'est le point important
+#
+# Le noyau de cache HTTP de Symfony (`HttpCache`) reste DÉSACTIVÉ. Ce n'est pas
+# un oubli, c'est la topologie même du projet : EcoShield EST le cache inverse
+# placé devant ce monolithe. Activer les deux ferait mettre en cache deux fois la
+# même réponse, et la mesure du Shield décrirait alors surtout le cache de
+# Symfony.
+#
+# C'est aussi représentatif : une application Symfony de production place presque
+# toujours son cache HTTP au niveau du reverse-proxy ou du CDN — c'est-à-dire
+# exactement à la place qu'occupe la passerelle ici — plutôt que dans le noyau PHP.
+framework:
+    cache:
+        app: cache.adapter.filesystem
+        system: cache.adapter.system
+        directory: '%kernel.cache_dir%/pools'
