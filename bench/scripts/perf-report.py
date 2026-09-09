@@ -423,6 +423,21 @@ def main(directory: str) -> int:
     for ladder_path in sorted(out.glob("perf-ladder-*.json")):
         summary = json.loads(ladder_path.read_text())
         workload = ladder_path.stem.replace("perf-ladder-", "")
+
+        steps = [
+            int(n.split("rate_")[1].rstrip("}"))
+            for n in summary.get("metrics", {})
+            if n.startswith("http_req_duration{scenario:rate_")
+        ]
+        # Durée d'UNE marche. k6 rapporte le `rate` d'une sous-métrique sur la
+        # durée TOTALE de l'exécution, pas sur celle de la marche qui l'a
+        # produite : une marche de 2 min dans une échelle de 10 min voit donc son
+        # débit divisé par cinq, et le tableau publierait « 10 req/s » pour une
+        # marche à 50. Le débit réellement atteint se recalcule à partir du
+        # NOMBRE de requêtes et de la durée de la marche.
+        total_seconds = float(summary.get("state", {}).get("testRunDurationMs") or 0) / 1000.0
+        step_seconds = (total_seconds / len(steps)) if steps and total_seconds else None
+
         rows = []
         for name, m in summary.get("metrics", {}).items():
             if not name.startswith("http_req_duration{scenario:rate_"):
@@ -433,7 +448,8 @@ def main(directory: str) -> int:
             failed = metric(summary, f"http_req_failed{{scenario:rate_{rate}}}")
             dropped = metric(summary, f"dropped_iterations{{scenario:rate_{rate}}}")
             n_dropped = int(dropped.get("count") or 0)
-            achieved = reqs.get("rate")
+            count = reqs.get("count")
+            achieved = (count / step_seconds) if (count is not None and step_seconds) else None
             rows.append((rate, achieved, d, failed, n_dropped))
         if not rows:
             continue
