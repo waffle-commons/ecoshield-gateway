@@ -24,6 +24,7 @@ composer.phar
 # `bench/scripts/perf-run.sh`. Les résumés JSON et les CSV, eux, RESTENT suivis :
 # ce sont les preuves derrière les chiffres de BENCHMARK_RESULTS.md.
 /bench/results/perf-*-k6.txt
+/bench/results/full-campaign.log
 
 # Brouillon de description de release : support de rédaction pour la publication
 # GitHub, pas un document du dépôt. Il duplique volontairement le CHANGELOG et le

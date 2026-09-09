@@ -2,6 +2,7 @@
 
 > **Version mesurée :** `0.1.0` sur `waffle-commons/*` `0.1.0-beta6`.
 > **Date :** 2026-09-09 · **Branche :** `perf/ecoshield-gateway-k6-soak`
+> **Campagne :** complète — endurance 3 h, échelle de débit, courbe mémoire, périmètre.
 > **Harnais :** `bench/k6/` + `bench/scripts/` (générateur k6 **natif sur l'hôte**).
 > **Données brutes :** `bench/results/perf-*` · rapport généré : `bench/results/PERF-REPORT.md`.
 
@@ -26,10 +27,12 @@ partagera le silicium de son sujet.
 
 | Critère | Cible | Mesuré | Verdict |
 |---|---|---|---|
-| Débit soutenu | 300 req/s pendant 3 min | **300.00 req/s**, 54 001 requêtes | PASS |
-| Erreurs HTTP | `rate < 0.001` | **0 échec sur 54 001** (0.000 %) | PASS |
-| Latence passerelle | p95 < 15 ms · p99 < 30 ms | `rescue` **1.81 / 2.19 ms** · `shield` **2.15 / 2.57 ms** | PASS |
-| Dérive mémoire worker | ≤ 256 kio nets | **−22.7 kio** sur le tas PHP | PASS |
+| Débit soutenu | 300 req/s pendant **3 h** | **299.99 req/s**, **3 239 963 requêtes** | PASS |
+| Erreurs HTTP | `rate < 0.001` | **0 échec sur 3 239 963** (0.00000 %) | PASS |
+| Latence passerelle | p95 < 15 ms · p99 < 30 ms | `rescue` **1.74 / 2.05 ms** · `shield` **2.17 / 2.57 ms** | PASS |
+| Dérive mémoire worker | ≤ 256 kio nets | **−131.8 kio** sur le tas PHP | PASS |
+| Dérive RSS conteneur | — | **+0.00 Mio/h (±0.03)** sur 3 h | PASS |
+| Santé de l'instrument | cadence tenue | médiane 2.0 s, pire écart 3.0 s sur 5 308 relevés | PASS |
 | Périmètre (assertions négatives) | 100 % | **280 / 280**, 0 contournement | PASS |
 | Cadrage des messages | aucun désync | **aucun** : 1 réponse par requête ambiguë | PASS |
 
@@ -38,13 +41,14 @@ Portes qualité, sur les fichiers touchés :
 | Porte | Résultat |
 |---|---|
 | `composer mago` (fmt · lint · analyze · guard) | **sortie vide** — `No issues found` sur les quatre |
-| `composer tests` | **45 tests, 143 assertions, OK** · couverture **99.19 %** |
+| `composer tests` | **52 tests, 162 assertions, OK** · couverture **99.29 %** |
 | `composer igor` | **0 KO** · 1 WARN préexistant (voir §7) |
 
-**Ce que ce verdict ne dit pas.** La fenêtre est de 3 minutes. Elle suffit à
-écarter une fuite grossière et à valider le critère des 256 kio ; elle ne
-certifie pas un service qui tourne des semaines. `BENCH-03` (beta6) soakait 3 h
-par moteur pour cette raison précise, et c'est ce qui reste à faire ici (§4).
+**Ce que ce verdict ne dit pas.** La fenêtre de 3 h contient UN recyclage de
+worker (§5.4) : elle établit l'absence de dérive sur la fenêtre, pas sur une
+durée de vie continue de worker de 3 h. Et la borne obtenue — ±0.03 Mio/h —
+écarte toute fuite supérieure à ~0.7 Mio/jour, ce qui suffit largement pour un
+service exploité, sans pour autant certifier des mois de fonctionnement.
 
 ---
 
@@ -107,36 +111,89 @@ mesure lisible malgré cela.
 
 ## 4. Débit et latence
 
-**54 001 requêtes à 300.00 req/s soutenues, 0 échec.**
+### 4.1 Endurance — 3 h à débit constant
 
-Latence en millisecondes. Les trois chemins ne mesurent pas la même chose, et
-les mélanger dans un p95 global produirait un chiffre qui n'en décrit aucun :
+**3 239 963 requêtes à 299.99 req/s soutenues, 0 échec.** Pas un arrondi : zéro
+sur 3,24 millions.
 
-| Chemin | requêtes | min | p50 | p90 | p95 | p99 | p99.9 | max |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `rescue` — servi par le worker | 32 401 | 0.72 | **1.23** | 1.64 | **1.81** | **2.19** | 4.16 | 20.15 |
-| `shield` — servi du cache | 16 200 | 0.98 | **1.54** | 2.01 | **2.15** | **2.57** | 9.38 | 30.19 |
-| `proxy` — traverse jusqu'au monolithe | 5 400 | 19.30 | 21.60 | 22.66 | 22.87 | 23.40 | 28.12 | 35.75 |
+| Chemin | requêtes | p50 | p95 | p99 | p99.9 | max |
+|---|---:|---:|---:|---:|---:|---:|
+| `rescue` — servi par le worker | 1 943 978 | 1.22 | **1.74** | **2.05** | 3.17 | 129.77 |
+| `shield` — servi du cache | 971 989 | 1.51 | **2.17** | **2.57** | 4.56 | 128.69 |
+| `proxy` — traverse jusqu'au monolithe | 323 996 | 4.54 | 5.76 | 6.91 | 9.97 | 146.72 |
 
 Le SLA (p95 < 15 ms, p99 < 30 ms) porte sur les deux premiers : ce sont les
-chemins que la passerelle sert elle-même. Le troisième est borné par le
-monolithe — 18 ms de bootstrap simulé par construction — et sa ligne est donnée
-en enregistrement, jamais comme une promesse de la passerelle.
+chemins que la passerelle sert elle-même. **La marge est d'un facteur 8,6 sur le
+p95** et de 14,6 sur le p99.
 
-**Marge réelle : le p99 de `rescue` est à 2.19 ms pour un plafond à 30 ms**, soit
-un facteur 13. Le chemin repris reste sous les 2 ms au 95ᵉ centile à 300 req/s
-sur deux workers et deux cœurs.
+Le chemin `proxy` est désormais à 4.54 ms de p50, contre 21.60 ms dans la
+campagne courte : c'est le vrai Symfony qui remplace le `usleep(15 ms)` du
+stand-in. L'ancien monolithe de démonstration était donc environ **cinq fois plus
+lent qu'un Symfony réel correctement réglé**, et tout écart publié contre lui
+était flatté d'autant.
 
-**La queue de `shield` est plus lourde que celle de `rescue`** (p99.9 à 9.38 ms
-contre 4.16) et c'est explicable, pas anormal : le TTL du Shield est de 30 s, et
-à chaque expiration les requêtes concurrentes trouvent le cache froid en même
-temps et repartent vers le monolithe. Sur une fenêtre de 3 minutes, six
-expirations produisent quelques dizaines de requêtes lentes — assez pour peupler
-le p99.9, pas assez pour peser sur le p99. Un exploitant qui voudrait lisser cela
-implémenterait un rafraîchissement anticipé ; ce n'est pas nécessaire pour le
-SLA visé.
+### 4.2 Échelle de débit — le genou de chaque camp
+
+Même requête, même base, même ligne. Modèle ouvert : le débit demandé est
+maintenu, et c'est la latence qui encaisse.
+
+| Débit visé | Passerelle atteint | p50 | Monolithe atteint | p50 | Lecture monolithe |
+|---:|---:|---:|---:|---:|---|
+| 50 | 50.01 | 4.43 | 48.84 | 16.79 | débit tenu |
+| 100 | 100.01 | 3.82 | 97.69 | 19.90 | débit tenu |
+| 200 | 200.01 | 2.36 | **111.18** | 3 557.92 | **saturé** |
+| 400 | 400.01 | 2.08 | **111.02** | 7 204.77 | **saturé** |
+| 800 | **800.00** | 2.59 | **115.57** | 14 326.25 | **saturé** |
+
+**Le plafond du monolithe est de ~111 req/s.** Qu'on lui en demande 200, 400 ou
+800, il en sert toujours 111 à 116 : le surplus devient file d'attente, et la
+latence passe de 20 ms à 14 secondes. Aucun des deux camps n'a rendu la moindre
+erreur HTTP, même saturé — PHP-FPM met en file, il ne refuse pas.
+
+**Le plafond de la passerelle n'a pas été atteint par l'échelle** : 800 req/s
+était la marche haute, tenue avec zéro itération perdue. La courbe mémoire (§4.3)
+le situe plus loin, vers **1 165 req/s** sur 2 vCPU.
+
+Aucune marche, d'aucun côté, n'a été écartée pour cause de générateur défaillant :
+chaque ligne décrit bien son sujet.
+
+### 4.3 Débit en fonction de la concurrence
+
+| Concurrence | Passerelle | p50 | Monolithe | p50 | Rapport de débit |
+|---:|---:|---:|---:|---:|---:|
+| 8 | 1 178.8 | 6.53 | 124.7 | 81.34 | 9.5× |
+| 16 | 1 152.5 | 13.65 | 118.1 | 111.63 | 9.8× |
+| 32 | 1 155.5 | 27.32 | 109.1 | 293.38 | 10.6× |
+| 64 | 1 119.1 | 57.17 | 110.1 | 582.82 | 10.2× |
+| 128 | 1 104.8 | 114.32 | 109.1 | 1 177.99 | 10.1× |
+
+La passerelle plafonne à **~1 165 req/s** dès 8 requêtes en vol : les 2 vCPU sont
+saturés, et toute concurrence supplémentaire devient de la latence, pas du débit.
+Le débit ne chute que de 6 % entre 8 et 128 requêtes simultanées — un plateau
+stable, pas un effondrement.
+
+*Contrôle de cohérence :* la latence double exactement avec la concurrence
+(6.53 → 13.65 → 27.32 → 57.17 → 114.32 ms) à débit constant. C'est la loi de
+Little qui sort des données : 128 ÷ 1 105 = 116 ms attendus contre 114.32
+observés. Un banc qui ne vérifierait pas cela pourrait publier du bruit.
+
+**Trois affirmations défendables :**
+
+- à charge égale (100 req/s), **5,2× moins de latence** — 3.82 contre 19.90 ms ;
+- **≥ 10× de débit** à concurrence égale, borne basse puisque la passerelle
+  n'a jamais été poussée à son plafond par l'échelle ;
+- la passerelle à 800 req/s (2.59 ms) reste **plus rapide que le monolithe à
+  50 req/s** (16.79 ms) : seize fois le trafic, un sixième de la latence.
+
+**Ce que cet écart mesure vraiment.** Pas seulement le coût du framework. Chaque
+processus PHP-FPM ouvre SA connexion PostgreSQL à chaque requête, là où le worker
+en réutilise une du pool. Ce coût de connexion pèse lourd dans l'écart, et c'est
+une propriété architecturale du mode worker — pas quelque chose qu'un monolithe
+mieux réglé rattraperait. Mais cela veut dire que « on a supprimé le démarrage »
+sous-estime le résultat, et que « Symfony est lent » le lit de travers.
 
 ---
+
 
 ## 5. Invariant mémoire
 
@@ -145,51 +202,97 @@ SLA visé.
 Le critère d'endurance s'exprime en **kio**. Le RSS du conteneur bouge par
 mégaoctets, et `memory_get_usage(true)` par paliers de 2 Mio : ni l'un ni l'autre
 ne peut trancher un seuil de 256 kio. C'est la raison d'être de la sonde
-`/__ecoshield/memory` ajoutée par cette campagne, qui publie le tas PHP **à
-l'octet** (fermée par défaut, ouverte par le seul banc).
+`/__ecoshield/memory`, qui publie le tas PHP **à l'octet** (fermée par défaut,
+ouverte par le seul banc).
 
-### 5.2 Tas PHP du worker — 89 relevés sur 3.0 min
+### 5.2 Tas PHP du worker — 5 308 relevés sur 3.00 h
 
-| Série | début (kio) | fin (kio) | Δ | pente (IC 95 %) | verdict |
-|---|---:|---:|---:|---:|---|
-| enveloppe haute | 888.10 | 888.10 | **+0.00** | −760 kio/h (±1310) | compatible avec zéro |
-| enveloppe basse | 820.12 | 820.12 | **+0.00** | +0.00 kio/h (±0.00) | compatible avec zéro |
-| pic cumulé | 1021.95 | 1021.95 | **+0.00** | +0.00 kio/h (±0.00) | compatible avec zéro |
-| blocs réclamés à l'OS | 2.00 Mio | 2.00 Mio | **+0.00** | +0.00 Mio/h (±0.00) | compatible avec zéro |
+| Série | début (kio) | fin (kio) | Δ | pente (IC 95 %) |
+|---|---:|---:|---:|---:|
+| enveloppe haute | 967.06 | 835.22 | −131.84 | −59.03 kio/h (±25.59) |
+| enveloppe basse | 835.22 | 494.09 | −341.12 | −134.25 kio/h (±66.30) |
+| pic cumulé | 1 048.57 | 647.82 | −400.75 | −115.76 kio/h (±5.28) |
+| blocs réclamés à l'OS | 2.00 Mio | 2.00 Mio | **+0.00** | +0.00 Mio/h (±0.00) |
 
-**ΔM = −22.7 kio** (moyenne des 20 % finaux moins moyenne des 20 % initiaux, sur
-l'enveloppe haute) — contre **256 kio** autorisés. **PASS.**
+**ΔM = −131.8 kio** contre 256 kio autorisés. **PASS.**
 
-Le pic cumulé, qui est monotone par thread et ne redescend jamais, **n'a pas
-bougé d'un octet** sur 54 001 requêtes. C'est le signal le plus net du tableau :
-aucun worker n'a jamais eu besoin de plus de mémoire à la fin qu'au début.
+Les blocs réclamés à l'OS n'ont pas bougé d'un octet en trois heures et
+3,24 millions de requêtes.
 
-*Note de méthode.* En mode worker FrankenPHP, chaque worker porte son propre tas
-(PHP est compilé en ZTS). La série brute alterne donc entre les deux niveaux
-selon le worker qui a servi le relevé, et une régression dessus mesure surtout
-cette alternance : elle affiche ici une pente de −473 kio/h alors que le premier
-et le dernier relevé sont **identiques**. Le verdict appartient aux enveloppes,
-et l'analyseur refuse délibérément d'en rendre un sur la série brute.
-
-### 5.3 RSS des conteneurs — 29 relevés sur 2.9 min
+### 5.3 RSS des conteneurs — 1 782 relevés sur 3.00 h
 
 | Conteneur | début | fin | Δ | pente (IC 95 %) |
 |---|---:|---:|---:|---:|
-| `ecoshield-gateway` | 47.59 Mio | 48.01 Mio | **+0.42 Mio** | +8.13 Mio/h (±5.60) |
-| `ecoshield-legacy-fpm` | 56.83 Mio | 56.81 Mio | **−0.02 Mio** | +2.57 Mio/h (±6.01) |
+| `ecoshield-gateway` | 51.20 Mio | 48.02 Mio | −3.18 Mio | **+0.00 Mio/h (±0.03)** |
+| `ecoshield-legacy-fpm` | 18.86 Mio | 19.49 Mio | +0.63 Mio | +0.01 Mio/h (±0.02) |
 
-La pente de la passerelle sort de sa borne, et **cela ne démontre pas une
-fuite** : sur 2.9 minutes, l'extrapolation horaire multiplie le bruit par 21. Le
-chiffre solide est le Δ observé — **+0.42 Mio sur la fenêtre** — et sa lecture
-honnête est la suivante : le tas PHP est plat à l'octet près, donc cette hausse
-ne vient pas du code applicatif mais de ce qui l'entoure (arènes du runtime Go,
-opcache qui finit de se remplir, tampons de Caddy). Une montée vers un palier et
-une dérive lente sont indiscernables sur une telle fenêtre.
+**C'est le chiffre le plus solide de la campagne.** La borne de détection est de
+**±0.03 Mio/h** — soit ~0.7 Mio par jour. La campagne courte ne pouvait offrir
+que ±5.60 Mio/h : la fenêtre de 3 h resserre la borne d'un facteur ~190.
 
-**C'est la limite principale de cette campagne, et elle est structurelle :** une
-fenêtre de 3 h resserrerait la borne d'un facteur ~7. Le harnais est prêt
-(`DURATION=3h bench/scripts/perf-run.sh soak`) ; seule la disponibilité de la
-machine manque.
+**L'instrument a tenu.** Cadence de relevé : médiane 2.0 s, pire écart 3.0 s sur
+la totalité des trois heures. Le mode de panne qui avait invalidé la campagne de
+3 h de beta6 — machine hôte décrochant, échantillonneur passant de 19 s à 94 s —
+ne s'est PAS reproduit. Le contrôle de cadence est désormais dans le rapport, et
+il aurait signalé la panne d'alors.
+
+### 5.4 Un recyclage de worker dans la fenêtre — à ne pas gommer
+
+Toutes les pentes du tas sont NÉGATIVES, et le pic cumulé DESCEND — ce qui est
+impossible pour un thread donné, `memory_get_peak_usage()` étant monotone.
+
+L'inspection des relevés donne exactement trois niveaux de pic distincts. Un
+worker passe de 1 048.6 kio à 647.8 kio à **t = 0.98 h**, tandis que l'autre tient
+1 041.1 kio pendant les trois heures. C'est un worker remplacé : aucun plantage,
+aucune erreur fatale, aucune requête perdue — un recyclage propre, cohérent avec
+l'atteinte de `MAX_REQUESTS` par le worker le plus sollicité. FrankenPHP n'a rien
+journalisé, ce qui empêche de le CERTIFIER ; c'est l'explication la plus cohérente
+avec les données, pas un fait vérifié.
+
+**Conséquence sur la portée de l'affirmation.** Les pentes négatives sont un
+artefact de cette remise à zéro, et non une mémoire qui se libère. La formulation
+correcte est « aucune dérive sur une fenêtre de 3 h contenant un recyclage
+transparent », et non « un worker a tenu 3 h sans dériver ». Le ΔM de −131.8 kio
+reste sous le budget, mais il est mesuré à travers une discontinuité.
+
+Pour une affirmation de durée de vie continue, `MAX_REQUESTS` doit dépasser le
+total de la campagne (10 000 000 plutôt que 1 000 000). La valeur utilisée ici
+est consignée dans `bench/results/perf-environment.json`.
+
+### 5.5 L'empreinte en fonction de la concurrence
+
+C'est l'expérience qui porte l'argument FinOps, et elle exige un modèle fermé :
+ce qui décide du nombre d'enfants PHP-FPM vivants n'est pas le débit d'arrivée
+mais le nombre de requêtes SIMULTANÉMENT en vol.
+
+| Concurrence | Passerelle (RSS crête) | Monolithe (RSS crête) |
+|---:|---:|---:|
+| 8 | 84.79 Mio | 37.73 Mio |
+| 16 | 84.81 Mio | 50.53 Mio |
+| 32 | 84.88 Mio | 74.48 Mio |
+| 64 | 84.78 Mio | 112.00 Mio |
+| 128 | 85.00 Mio | 112.60 Mio *(plafond de processus)* |
+
+- **Passerelle : +0.0015 Mio par requête concurrente** (c = 8 à 128). L'empreinte
+  bouge de 0.21 Mio pour une concurrence multipliée par seize — plate au bruit près.
+- **Monolithe : +1.3149 Mio par requête concurrente** (c = 8 à 64).
+
+La marche c = 128 du monolithe est **exclue de la régression** : son RSS cesse de
+croître alors que la concurrence double, parce que `pm.max_children = 64` empêche
+d'ouvrir un enfant de plus. Ce palier n'est pas une empreinte qui se stabilise,
+c'est une concurrence qui n'est plus servie. L'inclure ramènerait la pente à
++0.6156 Mio/requête et publierait un monolithe **deux fois plus sobre qu'il n'est**.
+
+**Croisement à ≈ 44 requêtes concurrentes.** En dessous de ce seuil, la passerelle
+consomme DAVANTAGE — elle garde le framework résident quand le monolithe ne garde
+rien : 84.8 contre 37.7 Mio à 8 requêtes en vol, soit 2,2× plus. Au-delà, l'écart
+se creuse indéfiniment.
+
+C'est la seule forme d'affirmation mémoire que ce banc autorise, et elle rejoint
+la conclusion de `bench/BENCH-RESULT.md` : **la pente est publiable, un facteur
+plat ne l'est pas.** Un exploitant en tire la règle utile — le bouclier devient
+rentable en mémoire à partir d'une quarantaine de requêtes simultanées, et pas
+avant.
 
 ---
 
@@ -255,7 +358,7 @@ Cinq observations qui ne font échouer aucune porte mais méritent d'être écri
 
 1. **L'image de développement ne pouvait pas exécuter sa propre suite de tests.**
    `phpunit.xml` déclare un rapport clover ; sans pilote de couverture, PHPUnit
-   12.5 ne se contente pas d'un avertissement — il charge les 45 tests, signale
+   12.5 ne se contente pas d'un avertissement — il charge toute la suite, signale
    `No code coverage driver available`, et **sort en erreur sans en exécuter un
    seul**. Le message « No tests executed! » ressemblait à une suite vide.
    **Corrigé** : `pcov` ajouté à l'étage `dev` du `Dockerfile` (et à lui seul —
@@ -317,6 +420,34 @@ attendent quiconque refera la mesure.
 5. **Une régression sur la série brute du tas est trompeuse** en mode multi-worker
    (§5.2). D'où l'analyse par enveloppes.
 
+6. **k6 rapporte le débit d'une sous-métrique sur la durée TOTALE de
+   l'exécution**, pas sur celle de la marche qui l'a produite. Une marche de
+   2 min dans une échelle de 10 min voyait son débit divisé par cinq : le tableau
+   annonçait « 10 req/s atteints » pour une marche visant 50, alors que les
+   6 001 requêtes comptées sur 120 s font 50.01 req/s. Le chiffre est désormais
+   recalculé à partir du NOMBRE de requêtes et de la durée d'une marche.
+
+7. **Itérations perdues : deux causes opposées sous un seul compteur.** Le
+   garde-fou écartait toute marche en ayant perdu — ce qui jetait le résultat le
+   plus important du banc, la saturation du monolithe à 111 req/s. Un SUJET qui
+   sature (latence en secondes, débit plafonné) est une mesure ; un GÉNÉRATEUR
+   qui flanche (sujet rapide, débit non tenu) n'en est pas une. La latence les
+   discrimine, et le rapport les nomme séparément.
+
+8. **Le plafond `pm.max_children` déguise la courbe mémoire en plateau.** Le RSS
+   du monolithe cesse de croître entre 64 et 128 requêtes concurrentes, non
+   parce que son empreinte se stabilise mais parce qu'il ne peut plus ouvrir
+   d'enfant. Régresser sur ces points ramenait la pente de +1.31 à +0.62 Mio par
+   requête — publier un monolithe deux fois plus sobre qu'il n'est. Les marches
+   plafonnées sont désormais exclues de la régression, et l'exclusion est écrite.
+
+9. **Un palier n'est un plafond que si la courbe a d'abord grimpé.** Le premier
+   correctif du point précédent traitait la courbe PLATE de la passerelle comme
+   une courbe tronquée, et écartait quatre marches sur cinq en invoquant un
+   `pm.max_children` que la passerelle ne possède pas — c'est-à-dire qu'il
+   supprimait le résultat même de l'expérience. La détection ne s'applique
+   maintenant qu'aux séries ayant crû d'au moins 5 % sur la plage.
+
 ---
 
 ## 9. Reproduire
@@ -326,8 +457,17 @@ attendent quiconque refera la mesure.
 # si un conteneur étranger tourne.
 docker compose -f docker-compose.yml -f docker-compose.perf.yml up -d --build
 
-# Campagne complète (préchauffe → repos → soak → périmètre → analyse)
-bench/scripts/perf-run.sh all
+# Campagne COMPLÈTE : endurance + échelle + courbe mémoire + périmètre (~55 min)
+bench/scripts/perf-run.sh full
+
+# La campagne publiée ici (~3 h 50), sous caffeinate pour que la veille de
+# l'hôte ne coupe pas la fenêtre — c'est ce qui avait tué la campagne beta6 :
+DURATION=3h caffeinate -i bench/scripts/perf-run.sh full
+
+# Le monolithe Symfony doit être en place, sinon le stand-in synthétique répond
+bench/legacy-symfony/bootstrap.sh
+docker compose -f docker-compose.yml -f docker-compose.perf.yml \
+               -f docker-compose.symfony.yml up -d --build
 
 # Variantes
 RATE=300 DURATION=3h bench/scripts/perf-run.sh soak     # fenêtre longue

@@ -1,11 +1,11 @@
 # Cadrage des messages — sondes à l'octet près
 
-Cible : http://localhost:8099 · 2026-09-09T08:37:16Z
+Cible : http://localhost:8099 · 2026-09-09T13:27:51Z
 
 | Cas | Réponses | Statut | Refusé par | Verdict |
 |---|---:|---:|---|---|
-| cl_te_smuggling | 1 | 200 | indéterminé | OK |
-| te_cl_smuggling | 1 | 200 | indéterminé | OK |
+| cl_te_smuggling | 1 | 405 | indéterminé | OK |
+| te_cl_smuggling | 1 | 405 | indéterminé | OK |
 | dual_content_length | 1 | 400 | Caddy (avant PHP) | OK |
 | controle_positif | 1 | 200 | indéterminé | OK |
 

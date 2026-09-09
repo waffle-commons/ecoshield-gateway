@@ -571,21 +571,84 @@ def main(directory: str) -> int:
                 )
             print()
             if len(xs) >= 2:
-                m, _ = slope(list(zip(xs, ys)))
-                slopes[subject] = m
-                print(f"Pente : **{m:+.3f} Mio par requête concurrente**.\n")
+                # Écarter les marches où le sujet ne peut PLUS allouer.
+                #
+                # PHP-FPM plafonne à `pm.max_children` : au-delà, les requêtes
+                # supplémentaires font la queue au lieu de créer un processus, et
+                # la courbe s'aplatit — non parce que la mémoire cesse de croître
+                # avec la concurrence, mais parce que la concurrence SERVIE cesse
+                # de croître. Régresser sur ces points-là dilue la pente réelle
+                # (ici d'un facteur ~2) et publierait un monolithe plus sobre
+                # qu'il n'est. La pente n'a de sens que sur la région où le sujet
+                # répond encore à la demande.
+                linear = [(x, y) for x, y in zip(xs, ys)]
+                capped = []
 
-        if "rescue" in slopes and "legacy" in slopes and slopes["rescue"] != 0:
-            ratio = slopes["legacy"] / slopes["rescue"] if slopes["rescue"] else None
+                # Un palier ne vaut « plafond » que si la courbe a D'ABORD
+                # grimpé. Sans cette condition, une courbe PLATE d'un bout à
+                # l'autre — c'est-à-dire exactement le résultat que la passerelle
+                # doit produire — serait prise pour une courbe tronquée, et le
+                # rapport écarterait la mesure la plus importante du banc en
+                # invoquant un `pm.max_children` que le sujet ne possède même pas.
+                total_growth = (ys[-1] - ys[0]) / ys[0] if ys[0] else 0.0
+                if total_growth >= 0.05:
+                    for i in range(1, len(linear)):
+                        prev_y, cur_y = linear[i - 1][1], linear[i][1]
+                        grew = (cur_y - prev_y) / prev_y if prev_y else 0.0
+                        if grew < 0.02:  # concurrence x2 pour <2% de RSS : plafond
+                            capped = linear[i:]
+                            linear = linear[:i]
+                            break
+
+                if len(linear) >= 2:
+                    m, _ = slope(linear)
+                    slopes[subject] = m
+                    scope = (
+                        f" sur la région non saturée (c={int(linear[0][0])}–{int(linear[-1][0])})"
+                        if capped
+                        else f" (c={int(linear[0][0])}–{int(linear[-1][0])})"
+                    )
+                    print(f"Pente{scope} : **{m:+.4f} Mio par requête concurrente**.\n")
+                if capped:
+                    m_all, _ = slope(list(zip(xs, ys)))
+                    print(
+                        f"> **Marches écartées de la régression : "
+                        f"c={', '.join(str(int(x)) for x, _ in capped)}.** Le RSS y "
+                        f"cesse de croître alors que la concurrence double — signature "
+                        f"d'un plafond de processus (`pm.max_children`), pas d'une "
+                        f"empreinte qui se stabilise. Les inclure ramènerait la pente à "
+                        f"{m_all:+.4f} Mio/requête et publierait un sujet plus sobre "
+                        f"qu'il n'est.\n"
+                    )
+
+        gw = next((slopes[k] for k in ('dbread', 'rescue') if k in slopes), None)
+        lg = next((slopes[k] for k in ('legacydb', 'legacy') if k in slopes), None)
+        if gw is not None and lg is not None:
+            # Le point de croisement, et non un « facteur RAM ». Une passerelle
+            # résidente part PLUS HAUT (le framework est en mémoire en
+            # permanence) et croît à plat ; un monolithe part bas et paie chaque
+            # requête concurrente. Il existe donc une concurrence en dessous de
+            # laquelle la passerelle coûte PLUS cher, et l'omettre serait la
+            # malhonnêteté classique de ce genre de comparaison.
             print(
-                f"**La pente est le résultat, pas un facteur plat.** Le monolithe paie "
-                f"{slopes['legacy']:+.3f} Mio par requête concurrente, la passerelle "
-                f"{slopes['rescue']:+.3f}"
-                + (f" — soit une croissance {ratio:.1f}× plus lente" if ratio and ratio > 0 else "")
-                + ". Un facteur d'économie ne se lit qu'à une concurrence donnée, et "
-                "seulement à celle que LES DEUX camps soutiennent : `bench/BENCH-RESULT.md` "
-                "avait déjà tranché ce point, et rien ici ne le contredit.\n"
+                f"**Le résultat est la PENTE, pas un facteur plat.** Le monolithe paie "
+                f"**{lg:+.4f} Mio par requête concurrente** ; la passerelle "
+                f"**{gw:+.4f}**, c'est-à-dire une empreinte constante quelle que soit "
+                f"la charge.\n"
             )
+            base_gw = memscale.get('dbread', memscale.get('rescue', []))
+            base_lg = memscale.get('legacydb', memscale.get('legacy', []))
+            if base_gw and base_lg and lg > gw:
+                flat = sum(p[2] for p in base_gw if p[2]) / max(len([p for p in base_gw if p[2]]), 1) / MIB
+                c0, y0 = base_lg[0][0], (base_lg[0][2] or 0) / MIB
+                cross = c0 + (flat - y0) / lg
+                print(
+                    f"**Croisement à ≈ {cross:.0f} requêtes concurrentes.** En dessous, "
+                    f"la passerelle consomme DAVANTAGE — elle garde le framework résident "
+                    f"quand le monolithe ne garde rien. Au-dessus, l'écart se creuse "
+                    f"indéfiniment. C'est à partir de ce seuil, et pas avant, qu'un "
+                    f"argument d'économie mémoire est défendable.\n"
+                )
 
     # --- périmètre ---------------------------------------------------------
     perim_path = out / "perf-perimeter.json"
