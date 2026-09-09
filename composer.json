@@ -87,6 +87,11 @@
             "@mago",
             "@tests",
             "composer audit"
+        ],
+        "post-create-project-cmd": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@php -r \"is_dir('var/cache/shield') || mkdir('var/cache/shield', 0775, true);\"",
+            "@php -r \"is_dir('var/log') || mkdir('var/log', 0775, true);\""
         ]
     },
     "config": {
