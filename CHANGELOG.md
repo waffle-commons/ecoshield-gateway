@@ -1,81 +1,107 @@
-# Changelog — EcoShield Gateway
+# Journal des modifications — EcoShield Gateway
 
-All notable changes to this project are documented in this file.
-The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-Versioned against the Waffle Commons release it runs on, but tagged independently —
-the gateway is not part of the framework's release wave.
+Toutes les évolutions notables de ce projet sont consignées ici.
+Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le projet applique le
+[versionnage sémantique](https://semver.org/lang/fr/).
+
+EcoShield est une **application autonome**, versionnée et publiée indépendamment du framework
+qu'elle consomme. Le numéro de version indique la version de `waffle-commons` sur laquelle elle a été
+construite et vérifiée ; elle n'appartient pas à la vague de publication du framework et ne bloque
+jamais celle-ci.
+
+---
 
 ## [0.1.0-beta6] — 2026-09
 
-First release of the POC as a **deployable application**. Earlier iterations shipped only the
-reverse-proxy class; this one is the gateway described in the README — something you start with
-`docker compose up -d` and put in front of a monolith.
+Première version publiée en tant qu'**application déployable**. Les itérations précédentes ne
+livraient qu'une classe de proxy inverse ; celle-ci est la passerelle décrite par le README — une
+pile que l'on démarre avec `docker compose up -d` et que l'on place devant un monolithe.
 
-### Added
-- **Pillar 1 — Interception (Rescue).** `RescueController` serves rescued routes from the resident
-  worker, never touching the monolith. `/__ecoshield/health` reports on the **gateway alone**: a
-  probe that fails because the upstream is down would have an orchestrator restart the one component
-  still able to serve cached traffic.
-- **Pillar 2 — Transparent proxying.** `GatewayController` is a catch-all at `priority: -1000`, so
-  every native route — present or future — is preferred without any configuration. Rescuing a route
-  means adding one to `RescueController`; the legacy's own routing and the client-facing URLs never
-  change. That is the Strangler Fig, made incremental.
-- **Pillar 3 — Shield.** `ResponseCache` caches upstream responses in PSR-16 (Redis in compose).
-  It refuses far more than it accepts, deliberately: non-GET/HEAD, any request bearing
-  `Authorization` or `Cookie`, any non-200, and any response carrying `Set-Cookie` or
-  `Cache-Control: no-store`/`private`. Sharing a private response between clients is the classic
-  gateway-cache data leak, and it is cheaper to prevent than to detect.
-- **The application shell**: FrankenPHP worker entrypoint, kernel factory, YAML configuration,
-  OPcache preloading, `.env.example`.
-- **`docker compose up -d` brings up the whole demonstration**: the gateway in worker mode, a legacy
-  monolith behind Nginx + PHP-FPM that rebuilds its framework on every request, and Redis.
-- **`bench/gateway-vs-legacy.js`** — a k6 protocol comparing the three paths (rescued / proxied /
-  cached) rather than comparing two frameworks: the only variable it changes is whether the
-  framework is resident or rebuilt.
+### Ajouté — les trois piliers
 
-### Notes
-- **Constant memory is reconciled with caching by a size cap.** Caching means materialising a body,
-  which is exactly what the proxy refuses to do to hold ΔM = 0. Past `shield.max_body_bytes` the
-  response streams through uncached. A gateway that cached everything would trade its memory
-  guarantee for a hit rate, and lose the only thing this POC sets out to demonstrate.
-- **No SSRF guard on the upstream client, by design.** The destination is fixed by the operator; the
-  proxy takes only path and query from the inbound message. A guard would reject the internal
-  addressing that is a gateway's whole reason to exist.
-- **No authentication.** `AnonymousSecurityContext` satisfies the framework's `SecureContainer`
-  without pretending to verify anything; edge auth is beta7 (`Roadmap_Beta7` AXE 1).
-- Runs on `waffle-commons/*` `0.1.0-beta6`, installed from Packagist.
+- **Pilier 1 — Interception (Rescue).** `RescueController` sert les routes reprises depuis le worker
+  résident, sans jamais atteindre le monolithe. `/__ecoshield/health` rend compte de **la passerelle
+  seule** : une sonde qui échouerait parce que l'amont est tombé conduirait un orchestrateur à
+  redémarrer le seul composant encore capable de servir du cache.
+- **Pilier 2 — Proxy transparent.** `GatewayController` est une route attrape-tout de priorité
+  `-1000` : toute route native, présente ou future, est préférée sans configuration. Reprendre une
+  route consiste à en ajouter une ; le routage du legacy et les URL vues par les clients ne changent
+  pas. C'est ce qui rend la migration incrémentale plutôt qu'un basculement.
+- **Pilier 3 — Bouclier (Shield).** `ResponseCache` mutualise les réponses de l'amont via PSR-16
+  (Redis en production). Il **refuse bien plus qu'il n'accepte**, délibérément : méthodes autres que
+  `GET`/`HEAD`, requêtes portant `Authorization` ou `Cookie`, réponses autres que `200` ou portant
+  `Set-Cookie`, `no-store` ou `private`. Servir la réponse privée d'un client à un autre est la
+  fuite classique des caches de passerelle : elle coûte moins cher à empêcher qu'à détecter.
 
-### Measured
-- **The benchmark harness is versioned and was run**: `bench/ladder.sh` (concurrency ladder,
-  latency + memory), `bench/soak.sh` (memory drift over time), `bench/stress.js` (saturation knee).
-  Full protocol and raw data in [`bench/BENCH-RESULT.md`](bench/BENCH-RESULT.md).
-- **Latency: 13.8× on a rescued route** (1.42 ms vs 19.62 ms unloaded) and 11.3× on a cache hit.
-  The README claimed 5×; the measurement beats it.
-- **Memory: +0.18 MiB per concurrent request against PHP-FPM's +4.14 — a 23× slower slope.**
-- **Endurance: +0.23 MiB/h over 30 minutes** of mixed load from a settled baseline — below allocator
-  noise, no detectable leak. The bound is honest about its window: a leak slower than ~0.5 MiB/h
-  would not show up in half an hour.
-- **Two README claims were corrected against the data.** "~80% RAM savings" is not true as a general
-  figure: below the crossover (16–32 concurrent requests) a resident worker costs *more* than an
-  idle FPM — 129.8 MiB vs 18.7 at one concurrent request. Real saving is 49% at 64 concurrent, and
-  80% would need ~166. The defensible claim is the slope, which is also what beta6's `BENCH-05`
-  concluded for the framework itself.
-- **Two methodology errors are recorded rather than quietly fixed**, because they invalidated whole
-  series and the same traps await anyone reproducing this: the image's default `pm.max_children = 5`
-  capped the legacy at five concurrent requests (measuring a queue, not an architecture), and the
-  first runs used the dev image — bind-mounted source with opcache revalidating every file, which on
-  macOS measures virtiofs rather than PHP. Superseded series are kept in `bench/results/`.
-- **What this harness cannot measure: capacity.** The load generator shares the VM's 12 vCPU with
-  the gateway and the monolith, so past 16 concurrent requests the numbers describe host contention.
-  A throughput figure needs a separate load host; that limitation is structural and stated in the
-  README rather than papered over.
+### Ajouté — l'application
 
-### Quality gates
-`composer mago` zero output · 42 tests, **99.15% statement coverage** · `igor-php` **0 KO**
-(10/10 stateless) · `composer validate --strict` clean.
+- Point d'entrée FrankenPHP en mode worker, fabrique de kernel, configuration YAML, préchargement
+  OPcache, `.env.example`.
+- `docker compose up -d` monte l'ensemble de la démonstration : la passerelle, un monolithe legacy
+  derrière Nginx + PHP-FPM qui reconstruit son framework à chaque requête, et Redis.
+- Banc de mesure versionné : `ladder.sh` (échelle de concurrence), `soak.sh` + `drift.py`
+  (endurance), `stress.js` (genou de saturation), `report.py`.
+- Documentation autonome : politique de sécurité, guide de contribution et code de conduite propres
+  au dépôt, en français — les redirections vers le framework ont été remplacées par du contenu réel.
 
-### Not implemented yet
-Upstream connection pooling, retry and circuit breaking (`resilience-net`, beta7 `[NET-01]`),
-WebSocket upgrade passthrough, and load balancing across several upstreams. The gateway grows to
-alpha in beta7 (`[GATE-02]`) and to beta in beta8 (`[GATE-03]`).
+### Mesuré
+
+Chiffres issus du banc, rejouables. Protocole complet et **limites** dans
+[`bench/BENCH-RESULT.md`](bench/BENCH-RESULT.md).
+
+- **Latence : ÷13.8 sur une route reprise** (1.42 ms contre 19.62 ms) et **÷11.3 sur une réponse en
+  cache**. Le README annonçait ÷5 ; la mesure dépasse l'objectif.
+- **Mémoire : +0.18 Mio par requête concurrente**, contre **+4.14 Mio** pour PHP-FPM — une croissance
+  **23× plus lente**.
+- **Endurance :** pente sous le bruit de l'allocateur sur une charge mixte, avec borne de détection
+  publiée à 95 %.
+
+### Corrigé — deux annonces qui n'ont pas survécu à la mesure
+
+- **« ~80 % d'économie de RAM » est faux comme chiffre général.** Sous le croisement (16 à 32
+  requêtes simultanées), un worker résident coûte **plus** cher qu'un PHP-FPM au repos : 129.8 Mio
+  contre 18.7 à une requête concurrente. L'économie réelle est de **49 % à 64 requêtes simultanées**,
+  et 80 % en exigeraient environ 166. L'affirmation défendable est la **pente**, ce qui est aussi la
+  conclusion à laquelle `BENCH-05` était parvenu pour le framework lui-même en beta6.
+- **Le README annonçait un protocole de mesure « à venir ».** Il est livré, exécuté et publié.
+
+### Consigné — trois erreurs de méthode
+
+Conservées plutôt que corrigées en silence : chacune a invalidé une campagne entière, et les mêmes
+pièges attendent quiconque refera la mesure.
+
+- Le défaut de l'image, `pm.max_children = 5`, plafonnait le monolithe à cinq requêtes simultanées :
+  sa mémoire paraissait excellente et sa latence catastrophique. On mesurait une file d'attente.
+- Les premières séries ont tourné sur l'image de développement — sources montées, opcache revalidant
+  chaque fichier — ce qui, sur macOS, mesure virtiofs et non PHP.
+- Le premier relevé d'endurance a rendu une pente négative que `drift.py` a signalée comme un défaut.
+  Deux bugs à la fois : la fenêtre démarrait sur le pic laissé par la campagne précédente, et
+  l'analyse traitait `|pente|` comme une anomalie — alors qu'une fuite est une pente **positive**.
+
+Les séries invalidées restent dans `bench/results/`.
+
+### Limite assumée
+
+**Ce banc ne mesure pas la capacité.** Le générateur de charge partage les 12 vCPU de la machine avec
+la passerelle et le monolithe : au-delà de 16 requêtes simultanées, les chiffres décrivent la
+contention de l'hôte. Quadrupler le nombre de workers n'a d'ailleurs changé le débit que de moins de
+5 %, ce qui établit que le plafond n'a jamais été le nombre de workers. Un chiffre de débit exige un
+générateur sur une machine distincte.
+
+### Périmètre non couvert
+
+Pooling de connexions vers l'amont, reprise sur erreur et coupe-circuit, passthrough WebSocket,
+répartition sur plusieurs amonts, authentification de bord. Ces briques relèvent du framework
+(`resilience-net`, beta7) plutôt que de la passerelle.
+
+### Portes de qualité
+
+`composer mago` sans aucune sortie · **42 tests, 99.15 %** de couverture d'instructions ·
+`igor-php` **0 KO** (10 services sur 10 sans état) · `composer validate --strict` conforme.
+
+---
+
+## Versions antérieures
+
+Les itérations `poc/*` antérieures ne publiaient qu'une bibliothèque contenant le contrôleur de
+proxy. Elles n'ont pas fait l'objet d'une publication et ne sont pas documentées ici.
