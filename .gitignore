@@ -13,3 +13,8 @@ composer.phar
 # `bench/ladder.sh`.
 /bench/results/step-*.json
 /bench/results/soak-summary.json
+
+# Brouillon de description de release : support de rédaction pour la publication
+# GitHub, pas un document du dépôt. Il duplique volontairement le CHANGELOG et le
+# README — le versionner créerait une troisième source à tenir à jour.
+/RELEASE.md
