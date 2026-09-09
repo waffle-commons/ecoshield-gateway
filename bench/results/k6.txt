@@ -1,0 +1,886 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /bench/gateway-vs-legacy.js
+        output: -
+
+     scenarios: (100.00%) 4 scenarios, 20 max VUs, 2m20s max duration (incl. graceful stop):
+              * legacy_direct: 20 looping VUs for 30s (exec: legacyDirect, gracefulStop: 5s)
+              * gateway_proxy: 20 looping VUs for 30s (exec: gatewayProxy, startTime: 35s, gracefulStop: 5s)
+              * gateway_shield: 20 looping VUs for 30s (exec: gatewayShield, startTime: 1m10s, gracefulStop: 5s)
+              * gateway_rescue: 20 looping VUs for 30s (exec: gatewayRescue, startTime: 1m45s, gracefulStop: 5s)
+
+
+running (0m01.0s), 20/20 VUs, 130 complete and 0 interrupted iterations
+legacy_direct    [   3% ] 20 VUs   01.0s/30s
+gateway_proxy  • [   0% ] waiting  34.0s
+gateway_shield • [   0% ] waiting  1m09.0s
+gateway_rescue • [   0% ] waiting  1m44.0s
+
+running (0m02.0s), 20/20 VUs, 318 complete and 0 interrupted iterations
+legacy_direct    [   7% ] 20 VUs   02.0s/30s
+gateway_proxy  • [   0% ] waiting  33.0s
+gateway_shield • [   0% ] waiting  1m08.0s
+gateway_rescue • [   0% ] waiting  1m43.0s
+
+running (0m03.0s), 20/20 VUs, 564 complete and 0 interrupted iterations
+legacy_direct    [  10% ] 20 VUs   03.0s/30s
+gateway_proxy  • [   0% ] waiting  32.0s
+gateway_shield • [   0% ] waiting  1m07.0s
+gateway_rescue • [   0% ] waiting  1m42.0s
+
+running (0m04.0s), 20/20 VUs, 824 complete and 0 interrupted iterations
+legacy_direct    [  13% ] 20 VUs   04.0s/30s
+gateway_proxy  • [   0% ] waiting  31.0s
+gateway_shield • [   0% ] waiting  1m06.0s
+gateway_rescue • [   0% ] waiting  1m41.0s
+
+running (0m05.0s), 20/20 VUs, 1094 complete and 0 interrupted iterations
+legacy_direct    [  17% ] 20 VUs   05.0s/30s
+gateway_proxy  • [   0% ] waiting  30.0s
+gateway_shield • [   0% ] waiting  1m05.0s
+gateway_rescue • [   0% ] waiting  1m40.0s
+
+running (0m06.0s), 20/20 VUs, 1361 complete and 0 interrupted iterations
+legacy_direct    [  20% ] 20 VUs   06.0s/30s
+gateway_proxy  • [   0% ] waiting  29.0s
+gateway_shield • [   0% ] waiting  1m04.0s
+gateway_rescue • [   0% ] waiting  1m39.0s
+
+running (0m07.0s), 20/20 VUs, 1621 complete and 0 interrupted iterations
+legacy_direct    [  23% ] 20 VUs   07.0s/30s
+gateway_proxy  • [   0% ] waiting  28.0s
+gateway_shield • [   0% ] waiting  1m03.0s
+gateway_rescue • [   0% ] waiting  1m38.0s
+
+running (0m08.0s), 20/20 VUs, 1886 complete and 0 interrupted iterations
+legacy_direct    [  27% ] 20 VUs   08.0s/30s
+gateway_proxy  • [   0% ] waiting  27.0s
+gateway_shield • [   0% ] waiting  1m02.0s
+gateway_rescue • [   0% ] waiting  1m37.0s
+
+running (0m09.0s), 20/20 VUs, 2151 complete and 0 interrupted iterations
+legacy_direct    [  30% ] 20 VUs   09.0s/30s
+gateway_proxy  • [   0% ] waiting  26.0s
+gateway_shield • [   0% ] waiting  1m01.0s
+gateway_rescue • [   0% ] waiting  1m36.0s
+
+running (0m10.0s), 20/20 VUs, 2416 complete and 0 interrupted iterations
+legacy_direct    [  33% ] 20 VUs   10.0s/30s
+gateway_proxy  • [   0% ] waiting  25.0s
+gateway_shield • [   0% ] waiting  1m00.0s
+gateway_rescue • [   0% ] waiting  1m35.0s
+
+running (0m11.0s), 20/20 VUs, 2691 complete and 0 interrupted iterations
+legacy_direct    [  37% ] 20 VUs   11.0s/30s
+gateway_proxy  • [   0% ] waiting  24.0s
+gateway_shield • [   0% ] waiting  0m59.0s
+gateway_rescue • [   0% ] waiting  1m34.0s
+
+running (0m12.0s), 20/20 VUs, 2951 complete and 0 interrupted iterations
+legacy_direct    [  40% ] 20 VUs   12.0s/30s
+gateway_proxy  • [   0% ] waiting  23.0s
+gateway_shield • [   0% ] waiting  0m58.0s
+gateway_rescue • [   0% ] waiting  1m33.0s
+
+running (0m13.0s), 20/20 VUs, 3216 complete and 0 interrupted iterations
+legacy_direct    [  43% ] 20 VUs   13.0s/30s
+gateway_proxy  • [   0% ] waiting  22.0s
+gateway_shield • [   0% ] waiting  0m57.0s
+gateway_rescue • [   0% ] waiting  1m32.0s
+
+running (0m14.0s), 20/20 VUs, 3481 complete and 0 interrupted iterations
+legacy_direct    [  47% ] 20 VUs   14.0s/30s
+gateway_proxy  • [   0% ] waiting  21.0s
+gateway_shield • [   0% ] waiting  0m56.0s
+gateway_rescue • [   0% ] waiting  1m31.0s
+
+running (0m15.0s), 20/20 VUs, 3751 complete and 0 interrupted iterations
+legacy_direct    [  50% ] 20 VUs   15.0s/30s
+gateway_proxy  • [   0% ] waiting  20.0s
+gateway_shield • [   0% ] waiting  0m55.0s
+gateway_rescue • [   0% ] waiting  1m30.0s
+
+running (0m16.0s), 20/20 VUs, 4012 complete and 0 interrupted iterations
+legacy_direct    [  53% ] 20 VUs   16.0s/30s
+gateway_proxy  • [   0% ] waiting  19.0s
+gateway_shield • [   0% ] waiting  0m54.0s
+gateway_rescue • [   0% ] waiting  1m29.0s
+
+running (0m17.0s), 20/20 VUs, 4287 complete and 0 interrupted iterations
+legacy_direct    [  57% ] 20 VUs   17.0s/30s
+gateway_proxy  • [   0% ] waiting  18.0s
+gateway_shield • [   0% ] waiting  0m53.0s
+gateway_rescue • [   0% ] waiting  1m28.0s
+
+running (0m18.0s), 20/20 VUs, 4547 complete and 0 interrupted iterations
+legacy_direct    [  60% ] 20 VUs   18.0s/30s
+gateway_proxy  • [   0% ] waiting  17.0s
+gateway_shield • [   0% ] waiting  0m52.0s
+gateway_rescue • [   0% ] waiting  1m27.0s
+
+running (0m19.0s), 20/20 VUs, 4816 complete and 0 interrupted iterations
+legacy_direct    [  63% ] 20 VUs   19.0s/30s
+gateway_proxy  • [   0% ] waiting  16.0s
+gateway_shield • [   0% ] waiting  0m51.0s
+gateway_rescue • [   0% ] waiting  1m26.0s
+
+running (0m20.0s), 20/20 VUs, 5082 complete and 0 interrupted iterations
+legacy_direct    [  67% ] 20 VUs   20.0s/30s
+gateway_proxy  • [   0% ] waiting  15.0s
+gateway_shield • [   0% ] waiting  0m50.0s
+gateway_rescue • [   0% ] waiting  1m25.0s
+
+running (0m21.0s), 20/20 VUs, 5350 complete and 0 interrupted iterations
+legacy_direct    [  70% ] 20 VUs   21.0s/30s
+gateway_proxy  • [   0% ] waiting  14.0s
+gateway_shield • [   0% ] waiting  0m49.0s
+gateway_rescue • [   0% ] waiting  1m24.0s
+
+running (0m22.0s), 20/20 VUs, 5622 complete and 0 interrupted iterations
+legacy_direct    [  73% ] 20 VUs   22.0s/30s
+gateway_proxy  • [   0% ] waiting  13.0s
+gateway_shield • [   0% ] waiting  0m48.0s
+gateway_rescue • [   0% ] waiting  1m23.0s
+
+running (0m23.0s), 20/20 VUs, 5887 complete and 0 interrupted iterations
+legacy_direct    [  77% ] 20 VUs   23.0s/30s
+gateway_proxy  • [   0% ] waiting  12.0s
+gateway_shield • [   0% ] waiting  0m47.0s
+gateway_rescue • [   0% ] waiting  1m22.0s
+
+running (0m24.0s), 20/20 VUs, 6147 complete and 0 interrupted iterations
+legacy_direct    [  80% ] 20 VUs   24.0s/30s
+gateway_proxy  • [   0% ] waiting  11.0s
+gateway_shield • [   0% ] waiting  0m46.0s
+gateway_rescue • [   0% ] waiting  1m21.0s
+
+running (0m25.0s), 20/20 VUs, 6417 complete and 0 interrupted iterations
+legacy_direct    [  83% ] 20 VUs   25.0s/30s
+gateway_proxy  • [   0% ] waiting  10.0s
+gateway_shield • [   0% ] waiting  0m45.0s
+gateway_rescue • [   0% ] waiting  1m20.0s
+
+running (0m26.0s), 20/20 VUs, 6682 complete and 0 interrupted iterations
+legacy_direct    [  87% ] 20 VUs   26.0s/30s
+gateway_proxy  • [   0% ] waiting  09.0s
+gateway_shield • [   0% ] waiting  0m44.0s
+gateway_rescue • [   0% ] waiting  1m19.0s
+
+running (0m27.0s), 20/20 VUs, 6942 complete and 0 interrupted iterations
+legacy_direct    [  90% ] 20 VUs   27.0s/30s
+gateway_proxy  • [   0% ] waiting  08.0s
+gateway_shield • [   0% ] waiting  0m43.0s
+gateway_rescue • [   0% ] waiting  1m18.0s
+
+running (0m28.0s), 20/20 VUs, 7217 complete and 0 interrupted iterations
+legacy_direct    [  93% ] 20 VUs   28.0s/30s
+gateway_proxy  • [   0% ] waiting  07.0s
+gateway_shield • [   0% ] waiting  0m42.0s
+gateway_rescue • [   0% ] waiting  1m17.0s
+
+running (0m29.0s), 20/20 VUs, 7477 complete and 0 interrupted iterations
+legacy_direct    [  97% ] 20 VUs   29.0s/30s
+gateway_proxy  • [   0% ] waiting  06.0s
+gateway_shield • [   0% ] waiting  0m41.0s
+gateway_rescue • [   0% ] waiting  1m16.0s
+
+running (0m30.0s), 20/20 VUs, 7742 complete and 0 interrupted iterations
+legacy_direct    [ 100% ] 20 VUs   30.0s/30s
+gateway_proxy  • [   0% ] waiting  05.0s
+gateway_shield • [   0% ] waiting  0m40.0s
+gateway_rescue • [   0% ] waiting  1m15.0s
+
+running (0m31.0s), 00/20 VUs, 7772 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  • [   0% ] waiting  04.0s
+gateway_shield • [   0% ] waiting  0m39.0s
+gateway_rescue • [   0% ] waiting  1m14.0s
+
+running (0m32.0s), 00/20 VUs, 7772 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  • [   0% ] waiting  03.0s
+gateway_shield • [   0% ] waiting  0m38.0s
+gateway_rescue • [   0% ] waiting  1m13.0s
+
+running (0m33.0s), 00/20 VUs, 7772 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  • [   0% ] waiting  02.0s
+gateway_shield • [   0% ] waiting  0m37.0s
+gateway_rescue • [   0% ] waiting  1m12.0s
+
+running (0m34.0s), 00/20 VUs, 7772 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  • [   0% ] waiting  01.0s
+gateway_shield • [   0% ] waiting  0m36.0s
+gateway_rescue • [   0% ] waiting  1m11.0s
+
+running (0m35.0s), 00/20 VUs, 7772 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  • [   0% ] waiting  00.0s
+gateway_shield • [   0% ] waiting  0m35.0s
+gateway_rescue • [   0% ] waiting  1m10.0s
+
+running (0m36.0s), 20/20 VUs, 7942 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [   3% ] 20 VUs   01.0s/30s
+gateway_shield • [   0% ] waiting  0m34.0s
+gateway_rescue • [   0% ] waiting  1m09.0s
+
+running (0m37.0s), 20/20 VUs, 8122 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [   7% ] 20 VUs   02.0s/30s
+gateway_shield • [   0% ] waiting  0m33.0s
+gateway_rescue • [   0% ] waiting  1m08.0s
+
+running (0m38.0s), 20/20 VUs, 8306 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  10% ] 20 VUs   03.0s/30s
+gateway_shield • [   0% ] waiting  0m32.0s
+gateway_rescue • [   0% ] waiting  1m07.0s
+
+running (0m39.0s), 20/20 VUs, 8482 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  13% ] 20 VUs   04.0s/30s
+gateway_shield • [   0% ] waiting  0m31.0s
+gateway_rescue • [   0% ] waiting  1m06.0s
+
+running (0m40.0s), 20/20 VUs, 8665 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  17% ] 20 VUs   05.0s/30s
+gateway_shield • [   0% ] waiting  0m30.0s
+gateway_rescue • [   0% ] waiting  1m05.0s
+
+running (0m41.0s), 20/20 VUs, 8849 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  20% ] 20 VUs   06.0s/30s
+gateway_shield • [   0% ] waiting  0m29.0s
+gateway_rescue • [   0% ] waiting  1m04.0s
+
+running (0m42.0s), 20/20 VUs, 9033 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  23% ] 20 VUs   07.0s/30s
+gateway_shield • [   0% ] waiting  0m28.0s
+gateway_rescue • [   0% ] waiting  1m03.0s
+
+running (0m43.0s), 20/20 VUs, 9217 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  27% ] 20 VUs   08.0s/30s
+gateway_shield • [   0% ] waiting  0m27.0s
+gateway_rescue • [   0% ] waiting  1m02.0s
+
+running (0m44.0s), 20/20 VUs, 9397 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  30% ] 20 VUs   09.0s/30s
+gateway_shield • [   0% ] waiting  0m26.0s
+gateway_rescue • [   0% ] waiting  1m01.0s
+
+running (0m45.0s), 20/20 VUs, 9581 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  33% ] 20 VUs   10.0s/30s
+gateway_shield • [   0% ] waiting  0m25.0s
+gateway_rescue • [   0% ] waiting  1m00.0s
+
+running (0m46.0s), 20/20 VUs, 9761 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  37% ] 20 VUs   11.0s/30s
+gateway_shield • [   0% ] waiting  0m24.0s
+gateway_rescue • [   0% ] waiting  0m59.0s
+
+running (0m47.0s), 20/20 VUs, 9946 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  40% ] 20 VUs   12.0s/30s
+gateway_shield • [   0% ] waiting  0m23.0s
+gateway_rescue • [   0% ] waiting  0m58.0s
+
+running (0m48.0s), 20/20 VUs, 10130 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  43% ] 20 VUs   13.0s/30s
+gateway_shield • [   0% ] waiting  0m22.0s
+gateway_rescue • [   0% ] waiting  0m57.0s
+
+running (0m49.0s), 20/20 VUs, 10314 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  47% ] 20 VUs   14.0s/30s
+gateway_shield • [   0% ] waiting  0m21.0s
+gateway_rescue • [   0% ] waiting  0m56.0s
+
+running (0m50.0s), 20/20 VUs, 10496 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  50% ] 20 VUs   15.0s/30s
+gateway_shield • [   0% ] waiting  0m20.0s
+gateway_rescue • [   0% ] waiting  0m55.0s
+
+running (0m51.0s), 20/20 VUs, 10678 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  53% ] 20 VUs   16.0s/30s
+gateway_shield • [   0% ] waiting  0m19.0s
+gateway_rescue • [   0% ] waiting  0m54.0s
+
+running (0m52.0s), 20/20 VUs, 10862 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  57% ] 20 VUs   17.0s/30s
+gateway_shield • [   0% ] waiting  0m18.0s
+gateway_rescue • [   0% ] waiting  0m53.0s
+
+running (0m53.0s), 20/20 VUs, 11047 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  60% ] 20 VUs   18.0s/30s
+gateway_shield • [   0% ] waiting  0m17.0s
+gateway_rescue • [   0% ] waiting  0m52.0s
+
+running (0m54.0s), 20/20 VUs, 11227 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  63% ] 20 VUs   19.0s/30s
+gateway_shield • [   0% ] waiting  0m16.0s
+gateway_rescue • [   0% ] waiting  0m51.0s
+
+running (0m55.0s), 20/20 VUs, 11407 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  67% ] 20 VUs   20.0s/30s
+gateway_shield • [   0% ] waiting  0m15.0s
+gateway_rescue • [   0% ] waiting  0m50.0s
+
+running (0m56.0s), 20/20 VUs, 11583 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  70% ] 20 VUs   21.0s/30s
+gateway_shield • [   0% ] waiting  0m14.0s
+gateway_rescue • [   0% ] waiting  0m49.0s
+
+running (0m57.0s), 20/20 VUs, 11767 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  73% ] 20 VUs   22.0s/30s
+gateway_shield • [   0% ] waiting  0m13.0s
+gateway_rescue • [   0% ] waiting  0m48.0s
+
+running (0m58.0s), 20/20 VUs, 11959 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  77% ] 20 VUs   23.0s/30s
+gateway_shield • [   0% ] waiting  0m12.0s
+gateway_rescue • [   0% ] waiting  0m47.0s
+
+running (0m59.0s), 20/20 VUs, 12151 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  80% ] 20 VUs   24.0s/30s
+gateway_shield • [   0% ] waiting  0m11.0s
+gateway_rescue • [   0% ] waiting  0m46.0s
+
+running (1m00.0s), 20/20 VUs, 12343 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  83% ] 20 VUs   25.0s/30s
+gateway_shield • [   0% ] waiting  0m10.0s
+gateway_rescue • [   0% ] waiting  0m45.0s
+
+running (1m01.0s), 20/20 VUs, 12531 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  87% ] 20 VUs   26.0s/30s
+gateway_shield • [   0% ] waiting  0m09.0s
+gateway_rescue • [   0% ] waiting  0m44.0s
+
+running (1m02.0s), 20/20 VUs, 12724 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  90% ] 20 VUs   27.0s/30s
+gateway_shield • [   0% ] waiting  0m08.0s
+gateway_rescue • [   0% ] waiting  0m43.0s
+
+running (1m03.0s), 20/20 VUs, 12916 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  93% ] 20 VUs   28.0s/30s
+gateway_shield • [   0% ] waiting  0m07.0s
+gateway_rescue • [   0% ] waiting  0m42.0s
+
+running (1m04.0s), 20/20 VUs, 13096 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [  97% ] 20 VUs   29.0s/30s
+gateway_shield • [   0% ] waiting  0m06.0s
+gateway_rescue • [   0% ] waiting  0m41.0s
+
+running (1m05.0s), 20/20 VUs, 13277 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy    [ 100% ] 20 VUs   30.0s/30s
+gateway_shield • [   0% ] waiting  0m05.0s
+gateway_rescue • [   0% ] waiting  0m40.0s
+
+running (1m06.0s), 00/20 VUs, 13305 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield • [   0% ] waiting  0m04.0s
+gateway_rescue • [   0% ] waiting  0m39.0s
+
+running (1m07.0s), 00/20 VUs, 13305 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield • [   0% ] waiting  0m03.0s
+gateway_rescue • [   0% ] waiting  0m38.0s
+
+running (1m08.0s), 00/20 VUs, 13305 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield • [   0% ] waiting  0m02.0s
+gateway_rescue • [   0% ] waiting  0m37.0s
+
+running (1m09.0s), 00/20 VUs, 13305 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield • [   0% ] waiting  0m01.0s
+gateway_rescue • [   0% ] waiting  0m36.0s
+
+running (1m10.0s), 00/20 VUs, 13305 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield • [   0% ] waiting  0m00.0s
+gateway_rescue • [   0% ] waiting  0m35.0s
+
+running (1m11.0s), 20/20 VUs, 13908 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [   3% ] 20 VUs   01.0s/30s
+gateway_rescue • [   0% ] waiting  0m34.0s
+
+running (1m12.0s), 20/20 VUs, 14499 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [   7% ] 20 VUs   02.0s/30s
+gateway_rescue • [   0% ] waiting  0m33.0s
+
+running (1m13.0s), 20/20 VUs, 15079 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  10% ] 20 VUs   03.0s/30s
+gateway_rescue • [   0% ] waiting  0m32.0s
+
+running (1m14.0s), 20/20 VUs, 15616 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  13% ] 20 VUs   04.0s/30s
+gateway_rescue • [   0% ] waiting  0m31.0s
+
+running (1m15.0s), 20/20 VUs, 16189 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  17% ] 20 VUs   05.0s/30s
+gateway_rescue • [   0% ] waiting  0m30.0s
+
+running (1m16.0s), 20/20 VUs, 16776 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  20% ] 20 VUs   06.0s/30s
+gateway_rescue • [   0% ] waiting  0m29.0s
+
+running (1m17.0s), 20/20 VUs, 17315 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  23% ] 20 VUs   07.0s/30s
+gateway_rescue • [   0% ] waiting  0m28.0s
+
+running (1m18.0s), 20/20 VUs, 17819 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  27% ] 20 VUs   08.0s/30s
+gateway_rescue • [   0% ] waiting  0m27.0s
+
+running (1m19.0s), 20/20 VUs, 18347 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  30% ] 20 VUs   09.0s/30s
+gateway_rescue • [   0% ] waiting  0m26.0s
+
+running (1m20.0s), 20/20 VUs, 18905 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  33% ] 20 VUs   10.0s/30s
+gateway_rescue • [   0% ] waiting  0m25.0s
+
+running (1m21.0s), 20/20 VUs, 19387 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  37% ] 20 VUs   11.0s/30s
+gateway_rescue • [   0% ] waiting  0m24.0s
+
+running (1m22.0s), 20/20 VUs, 19915 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  40% ] 20 VUs   12.0s/30s
+gateway_rescue • [   0% ] waiting  0m23.0s
+
+running (1m23.0s), 20/20 VUs, 20402 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  43% ] 20 VUs   13.0s/30s
+gateway_rescue • [   0% ] waiting  0m22.0s
+
+running (1m24.0s), 20/20 VUs, 20932 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  47% ] 20 VUs   14.0s/30s
+gateway_rescue • [   0% ] waiting  0m21.0s
+
+running (1m25.0s), 20/20 VUs, 21482 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  50% ] 20 VUs   15.0s/30s
+gateway_rescue • [   0% ] waiting  0m20.0s
+
+running (1m26.0s), 20/20 VUs, 21990 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  53% ] 20 VUs   16.0s/30s
+gateway_rescue • [   0% ] waiting  0m19.0s
+
+running (1m27.0s), 20/20 VUs, 22511 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  57% ] 20 VUs   17.0s/30s
+gateway_rescue • [   0% ] waiting  0m18.0s
+
+running (1m28.0s), 20/20 VUs, 23037 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  60% ] 20 VUs   18.0s/30s
+gateway_rescue • [   0% ] waiting  0m17.0s
+
+running (1m29.0s), 20/20 VUs, 23577 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  63% ] 20 VUs   19.0s/30s
+gateway_rescue • [   0% ] waiting  0m16.0s
+
+running (1m30.0s), 20/20 VUs, 24110 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  67% ] 20 VUs   20.0s/30s
+gateway_rescue • [   0% ] waiting  0m15.0s
+
+running (1m31.0s), 20/20 VUs, 24688 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  70% ] 20 VUs   21.0s/30s
+gateway_rescue • [   0% ] waiting  0m14.0s
+
+running (1m32.0s), 20/20 VUs, 25170 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  73% ] 20 VUs   22.0s/30s
+gateway_rescue • [   0% ] waiting  0m13.0s
+
+running (1m33.0s), 20/20 VUs, 25604 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  77% ] 20 VUs   23.0s/30s
+gateway_rescue • [   0% ] waiting  0m12.0s
+
+running (1m34.0s), 20/20 VUs, 26080 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  80% ] 20 VUs   24.0s/30s
+gateway_rescue • [   0% ] waiting  0m11.0s
+
+running (1m35.0s), 20/20 VUs, 26552 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  83% ] 20 VUs   25.0s/30s
+gateway_rescue • [   0% ] waiting  0m10.0s
+
+running (1m36.0s), 20/20 VUs, 27095 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  87% ] 20 VUs   26.0s/30s
+gateway_rescue • [   0% ] waiting  0m09.0s
+
+running (1m37.0s), 20/20 VUs, 27608 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  90% ] 20 VUs   27.0s/30s
+gateway_rescue • [   0% ] waiting  0m08.0s
+
+running (1m38.0s), 20/20 VUs, 28110 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  93% ] 20 VUs   28.0s/30s
+gateway_rescue • [   0% ] waiting  0m07.0s
+
+running (1m39.0s), 20/20 VUs, 28622 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [  97% ] 20 VUs   29.0s/30s
+gateway_rescue • [   0% ] waiting  0m06.0s
+
+running (1m40.0s), 20/20 VUs, 29112 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield   [ 100% ] 20 VUs   30.0s/30s
+gateway_rescue • [   0% ] waiting  0m05.0s
+
+running (1m41.0s), 00/20 VUs, 29142 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield ✓ [ 100% ] 20 VUs   30s
+gateway_rescue • [   0% ] waiting  0m04.0s
+
+running (1m42.0s), 00/20 VUs, 29142 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield ✓ [ 100% ] 20 VUs   30s
+gateway_rescue • [   0% ] waiting  0m03.0s
+
+running (1m43.0s), 00/20 VUs, 29142 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield ✓ [ 100% ] 20 VUs   30s
+gateway_rescue • [   0% ] waiting  0m02.0s
+
+running (1m44.0s), 00/20 VUs, 29142 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield ✓ [ 100% ] 20 VUs   30s
+gateway_rescue • [   0% ] waiting  0m01.0s
+
+running (1m45.0s), 00/20 VUs, 29142 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs   30s
+gateway_proxy  ✓ [ 100% ] 20 VUs   30s
+gateway_shield ✓ [ 100% ] 20 VUs   30s
+gateway_rescue • [   0% ] waiting  0m00.0s
+
+running (1m46.0s), 20/20 VUs, 29711 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [   3% ] 20 VUs  01.0s/30s
+
+running (1m47.0s), 20/20 VUs, 30252 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [   7% ] 20 VUs  02.0s/30s
+
+running (1m48.0s), 20/20 VUs, 30836 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  10% ] 20 VUs  03.0s/30s
+
+running (1m49.0s), 20/20 VUs, 31275 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  13% ] 20 VUs  04.0s/30s
+
+running (1m50.0s), 20/20 VUs, 31765 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  17% ] 20 VUs  05.0s/30s
+
+running (1m51.0s), 20/20 VUs, 32327 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  20% ] 20 VUs  06.0s/30s
+
+running (1m52.0s), 20/20 VUs, 32892 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  23% ] 20 VUs  07.0s/30s
+
+running (1m53.0s), 20/20 VUs, 33365 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  27% ] 20 VUs  08.0s/30s
+
+running (1m54.0s), 20/20 VUs, 33846 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  30% ] 20 VUs  09.0s/30s
+
+running (1m55.0s), 20/20 VUs, 34306 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  33% ] 20 VUs  10.0s/30s
+
+running (1m56.0s), 20/20 VUs, 34749 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  37% ] 20 VUs  11.0s/30s
+
+running (1m57.0s), 20/20 VUs, 35206 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  40% ] 20 VUs  12.0s/30s
+
+running (1m58.0s), 20/20 VUs, 35654 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  43% ] 20 VUs  13.0s/30s
+
+running (1m59.0s), 20/20 VUs, 36063 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  47% ] 20 VUs  14.0s/30s
+
+running (2m00.0s), 20/20 VUs, 36572 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  50% ] 20 VUs  15.0s/30s
+
+running (2m01.0s), 20/20 VUs, 37026 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  53% ] 20 VUs  16.0s/30s
+
+running (2m02.0s), 20/20 VUs, 37520 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  57% ] 20 VUs  17.0s/30s
+
+running (2m03.0s), 20/20 VUs, 37978 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  60% ] 20 VUs  18.0s/30s
+
+running (2m04.0s), 20/20 VUs, 38407 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  63% ] 20 VUs  19.0s/30s
+
+running (2m05.0s), 20/20 VUs, 38869 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  67% ] 20 VUs  20.0s/30s
+
+running (2m06.0s), 20/20 VUs, 39356 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  70% ] 20 VUs  21.0s/30s
+
+running (2m07.0s), 20/20 VUs, 39884 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  73% ] 20 VUs  22.0s/30s
+
+running (2m08.0s), 20/20 VUs, 40346 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  77% ] 20 VUs  23.0s/30s
+
+running (2m09.0s), 20/20 VUs, 40781 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  80% ] 20 VUs  24.0s/30s
+
+running (2m10.0s), 20/20 VUs, 41214 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  83% ] 20 VUs  25.0s/30s
+
+running (2m11.0s), 20/20 VUs, 41637 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  87% ] 20 VUs  26.0s/30s
+
+running (2m12.0s), 20/20 VUs, 42113 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  90% ] 20 VUs  27.0s/30s
+
+running (2m13.0s), 20/20 VUs, 42531 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  93% ] 20 VUs  28.0s/30s
+
+running (2m14.0s), 20/20 VUs, 42906 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [  97% ] 20 VUs  29.0s/30s
+
+running (2m15.0s), 20/20 VUs, 43245 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue   [ 100% ] 20 VUs  30.0s/30s
+
+
+  █ THRESHOLDS 
+
+    ec_gateway_rescue_ms
+    ✗ 'p(95)<15' p(95)=86.57ms
+
+    ec_gateway_shield_ms
+    ✗ 'p(95)<25' p(95)=76.27ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 73239   542.348578/s
+    checks_succeeded...: 100.00% 73239 out of 73239
+    checks_failed......: 0.00%   0 out of 73239
+
+    ✓ legacy 200
+    ✓ proxy 200
+    ✓ shield 200
+    ✓ shield rend un verdict
+    ✓ rescue 200
+    ✓ servie par la passerelle
+
+    CUSTOM
+    ec_gateway_proxy_ms............: avg=108.47ms min=34.7ms  med=108.04ms p(90)=114.16ms p(95)=118.95ms p(99)=124.94ms max=155.86ms
+    ec_gateway_rescue_ms...........: avg=42.31ms  min=3.75ms  med=37.58ms  p(90)=73.27ms  p(95)=86.57ms  p(99)=118.78ms max=238.16ms
+    ec_gateway_shield_ms...........: avg=37.74ms  min=3.27ms  med=33.71ms  p(90)=64.69ms  p(95)=76.27ms  p(99)=102.38ms max=178.43ms
+    ec_legacy_direct_ms............: avg=77.13ms  min=21.34ms med=74.67ms  p(90)=78.77ms  p(95)=91.6ms   p(99)=135.09ms max=195.1ms 
+
+    HTTP
+    http_req_duration..............: avg=55.35ms  min=3.27ms  med=48.72ms  p(90)=106.52ms p(95)=109.88ms p(99)=121.63ms max=238.16ms
+      { expected_response:true }...: avg=55.35ms  min=3.27ms  med=48.72ms  p(90)=106.52ms p(95)=109.88ms p(99)=121.63ms max=238.16ms
+    http_req_failed................: 0.00%  0 out of 43272
+    http_reqs......................: 43272  320.437303/s
+
+    EXECUTION
+    iteration_duration.............: avg=55.51ms  min=3.4ms   med=48.9ms   p(90)=106.69ms p(95)=110.03ms p(99)=121.82ms max=238.33ms
+    iterations.....................: 43272  320.437303/s
+    vus............................: 20     min=0          max=20
+    vus_max........................: 20     min=20         max=20
+
+    NETWORK
+    data_received..................: 21 MB  156 kB/s
+    data_sent......................: 3.6 MB 27 kB/s
+
+
+
+
+running (2m15.0s), 00/20 VUs, 43272 complete and 0 interrupted iterations
+legacy_direct  ✓ [ 100% ] 20 VUs  30s
+gateway_proxy  ✓ [ 100% ] 20 VUs  30s
+gateway_shield ✓ [ 100% ] 20 VUs  30s
+gateway_rescue ✓ [ 100% ] 20 VUs  30s
+time="2026-09-08T21:34:05Z" level=error msg="thresholds on metrics 'ec_gateway_rescue_ms, ec_gateway_shield_ms' have been crossed"

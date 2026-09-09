@@ -1,0 +1,9 @@
+.git
+.github
+bench
+legacy
+tests
+var
+vendor
+docker-compose*.yml
+*.md

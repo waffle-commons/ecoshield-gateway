@@ -1,0 +1,10 @@
+{
+    "exclude": [
+        "vendor",
+        "tests",
+        "var",
+        "bench",
+        "legacy"
+    ],
+    "verbose": false
+}

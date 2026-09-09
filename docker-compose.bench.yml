@@ -1,0 +1,16 @@
+# Surcharge de MESURE.
+#
+# Le défaut démarre déjà l'image de production : cette surcharge n'a donc qu'un
+# seul rôle, publier temporairement le monolithe pour que le banc dispose d'un
+# chemin de référence qui n'emprunte pas la passerelle. Sans lui, la mesure
+# comparerait EcoShield à lui-même.
+#
+# C'est une exposition de banc, jamais de déploiement : un amont joignable en
+# direct se contourne, et le bouclier ne protège plus rien.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.bench.yml up -d --build
+#   ./bench/ladder.sh
+services:
+  legacy-nginx:
+    ports:
+      - '${LEGACY_PORT:-8098}:80'

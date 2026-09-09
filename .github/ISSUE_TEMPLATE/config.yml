@@ -1,0 +1,16 @@
+# Pas d'issue vierge : les gabarits demandent le strict nécessaire pour qu'un
+# rapport soit exploitable, et une faille de sécurité ne doit JAMAIS transiter
+# par un canal public.
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Signaler une vulnérabilité
+    url: https://github.com/waffle-commons/ecoshield-gateway/security/advisories/new
+    about: >-
+      Canal PRIVÉ. N'ouvrez jamais d'issue publique pour une faille : elle serait
+      visible avant qu'un correctif n'existe. Voir SECURITY.md.
+  - name: 💬 Question d'usage ou de dimensionnement
+    url: https://github.com/waffle-commons/ecoshield-gateway/discussions
+    about: >-
+      « EcoShield est-il pertinent pour mon trafic ? » se discute mieux qu'il ne
+      se rapporte. Le README documente le croisement mémoire, qui décide souvent
+      la réponse.

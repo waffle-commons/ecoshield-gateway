@@ -1,0 +1,23 @@
+# Surcharge de DÉVELOPPEMENT.
+#
+# Le fichier par défaut démarre ce qui est réellement déployé : image `prod`,
+# code copié, debug désactivé. Pour coder, il faut l'inverse — les sources
+# montées depuis l'hôte pour que l'édition soit immédiate, et les traces
+# d'erreur complètes.
+#
+# Ne jamais MESURER avec cette surcharge : le montage passe par virtiofs sur
+# macOS et l'opcache revalide chaque fichier à chaque requête, si bien que le
+# banc mesure alors un système de fichiers plutôt que PHP. La campagne de
+# mesure a coûté une série entière avant que cela ne soit compris
+# (voir bench/BENCH-RESULT.md).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+services:
+  gateway:
+    build:
+      target: dev
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: 'true'
+    volumes:
+      - ./:/app

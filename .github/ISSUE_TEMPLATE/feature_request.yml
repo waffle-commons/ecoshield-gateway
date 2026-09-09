@@ -1,0 +1,69 @@
+name: 💡 Évolution
+description: Proposer une capacité, une reprise de route ou une amélioration
+labels: ["évolution", "à trier"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Une passerelle se juge autant sur ce qu'elle refuse que sur ce qu'elle
+        fait. Une proposition est donc évaluée sur le problème qu'elle résout,
+        pas sur la fonctionnalité qu'elle ajoute.
+
+        Avant d'ouvrir : plusieurs briques sont **volontairement absentes** et
+        relèvent du framework — pooling amont, reprise sur erreur et
+        coupe-circuit, limitation de débit, authentification de bord. Voir
+        « Périmètre non couvert » dans le README.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Quel problème, concrètement ?
+      description: >-
+        La situation qui vous a amené ici, pas la solution envisagée. « Nos pics
+        saturent la base malgré le cache » se traite ; « ajouter un limiteur »
+        présuppose déjà la réponse.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposition
+    validations:
+      required: true
+
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Où cela devrait-il vivre ?
+      description: >-
+        La passerelle n'importe que des interfaces PSR. Une capacité réutilisable
+        par d'autres applications appartient au framework, pas ici.
+      options:
+        - "Dans la passerelle — spécifique à la fonction de proxy"
+        - "Dans le framework waffle-commons — réutilisable ailleurs"
+        - "Je ne sais pas"
+    validations:
+      required: true
+
+  - type: textarea
+    id: cost
+    attributes:
+      label: Coût sur les invariants
+      description: >-
+        Trois propriétés sont revendiquées publiquement : mémoire constante
+        (aucun corps de message bufferisé), aucun état entre requêtes en mode
+        worker, et un cache qui refuse tout ce qui est privé. Votre proposition
+        en touche-t-elle une ? Une réponse honnête vaut mieux qu'une omission —
+        c'est la première chose qui sera vérifiée en revue.
+    validations:
+      required: true
+
+  - type: textarea
+    id: measurement
+    attributes:
+      label: Comment mesurer le gain ?
+      description: >-
+        Le dépôt publie des chiffres reproductibles et a déjà corrigé deux de ses
+        propres annonces après mesure. Une proposition de performance qui ne
+        propose pas son protocole ne pourra pas être arbitrée.
