@@ -1,0 +1,127 @@
+# Surcharge de MESURE NATIVE — le générateur de charge tourne sur l'hôte.
+#
+# `docker-compose.bench.yml` sert le harnais historique, où k6 tourne DANS le
+# réseau compose. Ce fichier-ci répond au défaut que `bench/BENCH-RESULT.md`
+# désigne lui-même comme sa limite principale : au-delà de 16 VUs, la VM Docker
+# héberge à la fois les conteneurs ET le générateur, si bien que l'échelle
+# mesure la contention de l'hôte et non une architecture.
+#
+# Le correctif tient en deux gestes :
+#
+#  1. k6 quitte Docker et tourne nativement sur l'hôte (`bench/scripts/perf-run.sh`).
+#  2. Chaque conteneur est BORNÉ en CPU, pour que la VM ne puisse pas prendre les
+#     12 vCPU et affamer le générateur. Le budget conteneurs est ici de 5 vCPU
+#     sur 12, ce qui laisse au générateur une réserve qu'il n'a jamais à
+#     disputer.
+#
+# C'est la même discipline que le banc écosystème beta6 (`bench/README.md`,
+# `cpus: "2"` + `mem_limit: 1g` sur chaque moteur) : on ne compare des chiffres
+# que si la capacité de chaque camp est déclarée.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.perf.yml up -d --build
+#   bench/scripts/perf-run.sh soak
+services:
+  gateway:
+    # 2 workers sur 2 vCPU. Le point n'est pas d'atteindre un débit maximal mais
+    # de tenir le débit visé (300 req/s) avec une capacité DÉCLARÉE et modeste :
+    # une passerelle qui tient 300 req/s sur 2 cœurs dit quelque chose ; la même
+    # mesure sur 12 cœurs partagés avec le générateur ne dit rien.
+    cpus: 2
+    mem_limit: 1g
+    environment:
+      WORKER_COUNT: '2'
+      # 2 workers résidents + 2 threads libres. Le pool doit rester strictement
+      # plus grand que le nombre de workers (FrankenPHP refuse l'égalité), et
+      # ces 2 threads de marge servent les requêtes non-worker : sans eux, un
+      # fichier statique ou la reprise après crash d'un worker attendrait qu'un
+      # worker se libère. C'est aussi la valeur que FrankenPHP aurait choisie
+      # seul ici — on la fige pour qu'elle ne suive plus la machine.
+      PHP_NUM_THREADS: '4'
+      # LE réglage qui décide si le soak veut dire quelque chose.
+      #
+      # Le défaut (2000) recycle le worker toutes les 2000 requêtes. À 300 req/s
+      # sur 3 minutes, c'est 54 000 requêtes réparties sur 2 workers, soit 27 000
+      # chacun : le worker serait recyclé treize fois pendant la fenêtre, et
+      # chaque recyclage remettrait le tas à neuf. Une fuite serait alors
+      # rigoureusement invisible — on mesurerait la fréquence de recyclage, pas
+      # l'étanchéité du worker. Le banc écosystème beta6 consigne exactement le
+      # même piège (`bench/README.md`, « Trap 3 »).
+      MAX_REQUESTS: '1000000'
+      # Ouvre `/__ecoshield/memory`. Fermée partout ailleurs, y compris dans le
+      # compose par défaut : c'est une sonde de banc, pas un point d'accès.
+      ECOSHIELD_DIAGNOSTICS: '1'
+      # Base de données du banc. Le pool est PARESSEUX : sans ces variables, la
+      # passerelle démarre exactement comme avant et la route de lecture répond
+      # 503 sans jamais tenter de connexion. C'est ce qui permet d'ajouter une
+      # base au banc sans alourdir la démonstration par défaut.
+      DB_DRIVER: 'pgsql'
+      DB_HOST: 'bench-postgres'
+      DB_PORT: '5432'
+      DB_NAME: 'bench'
+      DB_USER: 'bench'
+      DB_PASSWORD: 'bench'
+      # Taille du pool par worker. Deux workers x 4 connexions = 8 au plus, très
+      # en dessous des 100 connexions par défaut de PostgreSQL : le banc ne doit
+      # jamais mesurer une file d'attente côté serveur de base.
+      DB_POOL_SIZE: '4'
+    depends_on:
+      - bench-postgres
+
+  # Plafonné à la même capacité que la passerelle. Le monolithe n'est pas le
+  # sujet de cette campagne, mais le laisser illimité le rendrait capable de
+  # prendre tout ce que la passerelle ne prend pas — et la latence proxyfiée
+  # mesurerait alors un dimensionnement, pas un saut de réseau.
+  legacy-fpm:
+    cpus: 2
+    mem_limit: 1g
+
+  legacy-nginx:
+    cpus: 0.5
+    mem_limit: 256m
+    # Publié pour que le banc dispose d'un chemin de référence qui n'emprunte pas
+    # la passerelle, mesuré sous LA MÊME topologie bornée. Comparer la passerelle
+    # d'aujourd'hui aux chiffres non bornés d'hier serait comparer deux bancs.
+    ports:
+      - '${LEGACY_PORT:-8098}:80'
+
+  redis:
+    cpus: 0.5
+    mem_limit: 256m
+
+  # La base partagée par LES DEUX camps.
+  #
+  # Le même serveur, le même jeu de 10 000 lignes, la même requête : sans cela,
+  # comparer une lecture de la passerelle à une lecture du monolithe comparerait
+  # deux bases. Elle est délibérément DIMENSIONNÉE LARGE et non bornée aussi
+  # serré que les sujets — c'est une infrastructure partagée, et la brider ferait
+  # d'elle le goulot d'étranglement commun, ce qui écraserait précisément l'écart
+  # que la campagne cherche à mesurer. Même choix que `bench-postgres` côté
+  # écosystème.
+  bench-postgres:
+    image: postgres:17-alpine
+    container_name: ecoshield-postgres
+    cpus: 2
+    mem_limit: 1g
+    environment:
+      POSTGRES_DB: 'bench'
+      POSTGRES_USER: 'bench'
+      POSTGRES_PASSWORD: 'bench'
+      # Le banc n'a aucune donnée à préserver : désactiver la synchronisation
+      # sur disque enlève la latence du stockage de l'hôte (virtiofs sur macOS)
+      # de la mesure. On veut le coût de la REQUÊTE, pas celui du disque de la VM.
+      POSTGRES_INITDB_ARGS: '--nosync'
+    command:
+      - 'postgres'
+      - '-c'
+      - 'fsync=off'
+      - '-c'
+      - 'synchronous_commit=off'
+      - '-c'
+      - 'full_page_writes=off'
+    volumes:
+      - ./bench/sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U bench -d bench']
+      interval: 5s
+      timeout: 3s
+      retries: 10

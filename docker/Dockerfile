@@ -14,11 +14,22 @@ ENV APP_ENV=prod \
     SERVER_NAME=":80" \
     WORKER_COUNT=4
 
-# Pas de pilote de base de données : la passerelle n'en ouvre aucune. Ce qui
-# n'est pas installé ne peut pas être exploité, et l'image reste petite.
+# Un SEUL pilote de base de données, et il est arrivé tard.
+#
+# La passerelle n'en ouvrait aucun, et l'argument tenait : ce qui n'est pas
+# installé ne peut pas être exploité. Il ne tient plus dès lors qu'une route
+# « reprise » sert de la vraie donnée — ce que `RescueController` annonçait
+# depuis le début (« une reprise réelle irait chercher la donnée via
+# waffle-commons/data »), et ce qu'un Strangler Fig finit toujours par faire :
+# reprendre une route sans reprendre ses données ne reprend rien.
+#
+# La surface reste donc minimale et délibérée : `pdo_pgsql` seul, aucun autre
+# moteur. Le pool est par ailleurs PARESSEUX — sans `DB_HOST`, aucune connexion
+# n'est jamais ouverte et la démonstration par défaut garde exactement son
+# empreinte d'avant.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        git unzip libyaml-dev \
-    && install-php-extensions opcache intl yaml redis \
+        git unzip libyaml-dev libpq-dev \
+    && install-php-extensions opcache intl yaml redis pdo_pgsql \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY docker/frankenphp/Caddyfile /etc/caddy/Caddyfile
@@ -30,6 +41,23 @@ WORKDIR /app
 FROM base AS dev
 
 ENV APP_ENV=dev
+
+# Pilote de couverture — indispensable, et absent jusqu'ici.
+#
+# `phpunit.xml` déclare un rapport clover. Sans pilote, PHPUnit 12.5 ne se
+# contente pas d'un avertissement : il charge la suite, signale « No code
+# coverage driver available » et SORT EN ERREUR sans exécuter un seul test. La
+# sortie « No tests executed! » ressemble alors à une suite vide, alors que les
+# 45 tests avaient bien été trouvés — l'image de développement était incapable
+# de faire tourner sa propre suite.
+#
+# pcov plutôt que xdebug : il ne fait que la couverture, pour une fraction du
+# coût, et le débogage pas-à-pas n'est pas ce que cette image sert.
+#
+# Dans l'étage `dev` UNIQUEMENT : l'étage `prod` ne doit embarquer aucun
+# instrument de mesure de code — c'est de la surface d'attaque et du ralentissement.
+RUN install-php-extensions pcov
+
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile" ]
 

@@ -22,6 +22,7 @@ use Waffle\Commons\Contracts\Cache\CacheInterface;
 use Waffle\Commons\Contracts\Config\ConfigInterface;
 use Waffle\Commons\Contracts\Constant\Constant;
 use Waffle\Commons\Contracts\Core\KernelInterface;
+use Waffle\Commons\Contracts\Data\Connection\RelationalConnectionPoolInterface;
 use Waffle\Commons\ErrorHandler\Middleware\ErrorHandlerMiddleware;
 use Waffle\Commons\ErrorHandler\Renderer\JsonErrorRenderer;
 use Waffle\Commons\Http\Factory\RequestFactory;
@@ -108,6 +109,12 @@ final class AppKernelFactory
                 maxBodyBytes: $config->getInt('gateway.shield.max_body_bytes') ?? self::DEFAULT_MAX_CACHED_BODY,
             ),
         );
+
+        // --- La base des routes reprises --------------------------------------
+        // Construit systématiquement, ouvert jamais : le pool est paresseux, donc
+        // une passerelle sans `DB_HOST` ne paie rien pour cette ligne et se
+        // comporte exactement comme avant. Voir ConnectionPoolFactory.
+        $container->set(RelationalConnectionPoolInterface::class, ConnectionPoolFactory::create($config));
 
         // --- Sécurité ---------------------------------------------------------
         $security = new Security($config);

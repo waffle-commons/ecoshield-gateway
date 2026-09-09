@@ -1,0 +1,366 @@
+{
+  "root_group": {
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": [
+      {
+        "name": "refus attendus",
+        "path": "::refus attendus",
+        "id": "482d5171d06648f00906bc7b7e83fb64",
+        "groups": [],
+        "checks": [
+            {
+              "fails": 0,
+              "name": "host_forge → 400",
+              "path": "::refus attendus::host_forge → 400",
+              "id": "47e29c6643d8f374191fa702ceb471ee",
+              "passes": 20
+            },
+            {
+              "fails": 0,
+              "name": "traversal_encoded → 400",
+              "path": "::refus attendus::traversal_encoded → 400",
+              "id": "7dc1ad43c32362a93e07839c1733f4a2",
+              "passes": 20
+            },
+            {
+              "name": "traversal_double_encoded → 400",
+              "path": "::refus attendus::traversal_double_encoded → 400",
+              "id": "7f48f3bb13bf22938aa1653f6ada10d7",
+              "passes": 20,
+              "fails": 0
+            },
+            {
+              "passes": 20,
+              "fails": 0,
+              "name": "traversal_backslash → 400",
+              "path": "::refus attendus::traversal_backslash → 400",
+              "id": "c6725fe700431ae320726c170bfb2b32"
+            },
+            {
+              "passes": 20,
+              "fails": 0,
+              "name": "traversal_too_deep → 400",
+              "path": "::refus attendus::traversal_too_deep → 400",
+              "id": "1489c660c81f51832cb53775941042fb"
+            },
+            {
+              "path": "::refus attendus::protocol_relative → 400",
+              "id": "f7322a36145e9be3e372db6b1503e490",
+              "passes": 20,
+              "fails": 0,
+              "name": "protocol_relative → 400"
+            },
+            {
+              "id": "a10f332ee59e45be7767b02d2fd0723d",
+              "passes": 20,
+              "fails": 0,
+              "name": "null_byte → 400",
+              "path": "::refus attendus::null_byte → 400"
+            }
+          ]
+      },
+      {
+        "name": "épinglage de la sortie",
+        "path": "::épinglage de la sortie",
+        "id": "f4979515cd6133ff4f11d24589ee332c",
+        "groups": [],
+        "checks": [
+            {
+              "name": "la sortie reste épinglée sur l amont configuré",
+              "path": "::épinglage de la sortie::la sortie reste épinglée sur l amont configuré",
+              "id": "d202e1a22aca10e7d409f81fb3ae5b6c",
+              "passes": 20,
+              "fails": 0
+            },
+            {
+              "name": "X-Forwarded-Host forge est ecrase",
+              "path": "::épinglage de la sortie::X-Forwarded-Host forge est ecrase",
+              "id": "6bb2de677aa6265514a9aa0be02ff479",
+              "passes": 20,
+              "fails": 0
+            },
+            {
+              "path": "::épinglage de la sortie::le pair reel est ajoute en fin de chaine",
+              "id": "92cbfc7c8b213a4343db498c2974622d",
+              "passes": 20,
+              "fails": 0,
+              "name": "le pair reel est ajoute en fin de chaine"
+            },
+            {
+              "name": "Forwarded et X-Real-IP sont supprimes",
+              "path": "::épinglage de la sortie::Forwarded et X-Real-IP sont supprimes",
+              "id": "40e99378c2adb43545bc2cc28602228f",
+              "passes": 20,
+              "fails": 0
+            }
+          ]
+      },
+      {
+        "name": "confidentialite du cache",
+        "path": "::confidentialite du cache",
+        "id": "5b7d594682b0b4c91eebea19d3a329fd",
+        "groups": [],
+        "checks": [
+            {
+              "name": "une requete porteuse de Cookie n est jamais servie du cache",
+              "path": "::confidentialite du cache::une requete porteuse de Cookie n est jamais servie du cache",
+              "id": "376661e1e0e61d082511769d54cd9ffd",
+              "passes": 20,
+              "fails": 0
+            },
+            {
+              "name": "une requete porteuse d Authorization n est jamais servie du cache",
+              "path": "::confidentialite du cache::une requete porteuse d Authorization n est jamais servie du cache",
+              "id": "63a2db97051f2e93b9e9af46fbd7cfdf",
+              "passes": 20,
+              "fails": 0
+            }
+          ]
+      },
+      {
+        "path": "::observations — surface non defendue",
+        "id": "265643f134bd3e6487b9553b865ccc53",
+        "groups": [],
+        "checks": [
+            {
+              "fails": 0,
+              "name": "un en-tete d identite arbitraire traverse tel quel (constat, pas garantie)",
+              "path": "::observations — surface non defendue::un en-tete d identite arbitraire traverse tel quel (constat, pas garantie)",
+              "id": "0d9d78a50b9f8321c8ec3ec15c75e34c",
+              "passes": 20
+            }
+          ],
+        "name": "observations — surface non defendue"
+      }
+    ],
+    "checks": [],
+    "name": ""
+  },
+  "options": {
+    "summaryTrendStats": [
+      "avg",
+      "min",
+      "med",
+      "p(90)",
+      "p(95)",
+      "p(99)",
+      "p(99.9)",
+      "max"
+    ],
+    "summaryTimeUnit": "",
+    "noColor": false
+  },
+  "state": {
+    "isStdOutTTY": false,
+    "isStdErrTTY": false,
+    "testRunDurationMs": 564.083
+  },
+  "metrics": {
+    "checks": {
+      "contains": "default",
+      "values": {
+        "rate": 1,
+        "passes": 280,
+        "fails": 0
+      },
+      "thresholds": {
+        "rate==1": {
+          "ok": true
+        }
+      },
+      "type": "rate"
+    },
+    "http_req_connecting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 0,
+        "p(90)": 0,
+        "p(95)": 0,
+        "p(99)": 0,
+        "p(99.9)": 0.12808400000000564,
+        "max": 0.164,
+        "avg": 0.0007454545454545455,
+        "min": 0
+      }
+    },
+    "http_req_waiting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 5.032349999999999,
+        "p(99)": 6.09199,
+        "p(99.9)": 6.172707000000002,
+        "max": 6.183,
+        "avg": 2.3656909090909095,
+        "min": 0.87,
+        "med": 1.826,
+        "p(90)": 4.4232
+      }
+    },
+    "iterations": {
+      "contains": "default",
+      "values": {
+        "count": 20,
+        "rate": 35.455775125291844
+      },
+      "type": "counter"
+    },
+    "http_req_tls_handshaking": {
+      "values": {
+        "med": 0,
+        "p(90)": 0,
+        "p(95)": 0,
+        "p(99)": 0,
+        "p(99.9)": 0,
+        "max": 0,
+        "avg": 0,
+        "min": 0
+      },
+      "type": "trend",
+      "contains": "time"
+    },
+    "http_reqs": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 220,
+        "rate": 390.0135263782103
+      }
+    },
+    "group_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 16.131179,
+        "avg": 7.031194087499998,
+        "min": 2.907245,
+        "med": 5.7140395,
+        "p(90)": 13.715697200000001,
+        "p(95)": 14.497329249999998,
+        "p(99)": 15.828217159999998,
+        "p(99.9)": 16.100882816000002
+      }
+    },
+    "data_received": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 78560,
+        "rate": 139270.28469214638
+      }
+    },
+    "http_req_duration{expected_response:true}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(90)": 5.2871,
+        "p(95)": 5.682349999999999,
+        "p(99)": 6.2871,
+        "p(99.9)": 6.29421,
+        "max": 6.295,
+        "avg": 3.9568750000000024,
+        "min": 2.652,
+        "med": 3.824
+      }
+    },
+    "http_req_receiving": {
+      "contains": "time",
+      "values": {
+        "min": 0.02,
+        "med": 0.044,
+        "p(90)": 0.08109999999999999,
+        "p(95)": 0.09334999999999988,
+        "p(99)": 0.129,
+        "p(99.9)": 0.13468600000000022,
+        "max": 0.136,
+        "avg": 0.05018181818181816
+      },
+      "type": "trend"
+    },
+    "data_sent": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 25390,
+        "rate": 45011.106521557995
+      }
+    },
+    "iteration_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(90)": 37.4775043,
+        "p(95)": 38.13695,
+        "p(99)": 38.8788772,
+        "p(99.9)": 39.04581082000001,
+        "max": 39.064359,
+        "avg": 28.184757900000005,
+        "min": 20.244453,
+        "med": 28.735507
+      }
+    },
+    "http_req_blocked": {
+      "contains": "time",
+      "values": {
+        "max": 2.49,
+        "avg": 0.0147863636363636,
+        "min": 0.002,
+        "med": 0.003,
+        "p(90)": 0.005,
+        "p(95)": 0.007,
+        "p(99)": 0.02324000000000001,
+        "p(99.9)": 1.9501650000000847
+      },
+      "type": "trend"
+    },
+    "http_req_duration": {
+      "values": {
+        "min": 0.905,
+        "med": 1.9365,
+        "p(90)": 4.5314,
+        "p(95)": 5.149099999999999,
+        "p(99)": 6.171360000000001,
+        "p(99.9)": 6.29281,
+        "max": 6.295,
+        "avg": 2.42998181818182
+      },
+      "type": "trend",
+      "contains": "time"
+    },
+    "http_req_sending": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 0.011,
+        "p(90)": 0.02,
+        "p(95)": 0.025,
+        "p(99)": 0.0740200000000001,
+        "p(99.9)": 0.1890710000000031,
+        "max": 0.209,
+        "avg": 0.014109090909090896,
+        "min": 0.005
+      }
+    },
+    "http_req_failed": {
+      "contains": "default",
+      "values": {
+        "rate": 0.6363636363636364,
+        "passes": 140,
+        "fails": 80
+      },
+      "type": "rate"
+    }
+  },
+  "bench": {
+    "scenario": "perimeter",
+    "target": "http://localhost:8099",
+    "generator": "k6 natif (hôte macOS)",
+    "env": {
+      "RATE": null,
+      "DURATION": "3h",
+      "WARMUP": null
+    }
+  }
+}

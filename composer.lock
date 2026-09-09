@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "15ece5eefb994903849c4d9c5424e43a",
+    "content-hash": "0820af822d7ecb9b6dc7e475fbee19dd",
     "packages": [
         {
             "name": "predis/predis",
@@ -800,6 +800,65 @@
                 "source": "https://github.com/waffle-commons/contracts/tree/0.1.0-beta6"
             },
             "time": "2026-09-08T18:04:59+00:00"
+        },
+        {
+            "name": "waffle-commons/data",
+            "version": "0.1.0-beta6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/waffle-commons/data.git",
+                "reference": "555b73156404f261dca71d1fd0be5528bf8c7eed"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/waffle-commons/data/zipball/555b73156404f261dca71d1fd0be5528bf8c7eed",
+                "reference": "555b73156404f261dca71d1fd0be5528bf8c7eed",
+                "shasum": ""
+            },
+            "require": {
+                "ext-pdo": "*",
+                "php": "^8.5",
+                "psr/http-client": "^1.0",
+                "psr/http-factory": "^1.0",
+                "psr/http-message": "^1.1 || ^2.0",
+                "psr/http-server-handler": "^1.0",
+                "psr/http-server-middleware": "^1.0",
+                "waffle-commons/contracts": "self.version"
+            },
+            "require-dev": {
+                "carthage-software/mago": "^1.29",
+                "cyclonedx/cyclonedx-php-composer": "^6.2",
+                "igor-php/igor-php": "^0.7.0",
+                "php-mock/php-mock-phpunit": "^2.15",
+                "phpunit/phpunit": "^12.5",
+                "vimeo/psalm": "^6.16"
+            },
+            "suggest": {
+                "ext-mongodb": "To execute document queries live through the MongoDriverSession driver.",
+                "ext-redis": "To execute key-value lookups live through the RedisKeyValueClient driver."
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Waffle\\Commons\\Data\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Leslie Petrimaux",
+                    "email": "contact@waffle-commons.cloud"
+                }
+            ],
+            "description": "The data and persistence layer for Waffle Commons (RFC-022): a warm connection pool, a backend-agnostic query AST, and parameterized SQL / CQL / MongoDB / Firestore / key-value / GraphQL compilers for resident-worker mode.",
+            "support": {
+                "issues": "https://github.com/waffle-commons/data/issues",
+                "source": "https://github.com/waffle-commons/data/tree/0.1.0-beta6"
+            },
+            "time": "2026-09-08T19:04:35+00:00"
         },
         {
             "name": "waffle-commons/error-handler",
@@ -3716,6 +3775,7 @@
         "waffle-commons/config": 10,
         "waffle-commons/container": 10,
         "waffle-commons/contracts": 10,
+        "waffle-commons/data": 10,
         "waffle-commons/error-handler": 10,
         "waffle-commons/http": 10,
         "waffle-commons/http-client": 10,

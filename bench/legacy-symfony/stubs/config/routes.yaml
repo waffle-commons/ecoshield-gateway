@@ -1,0 +1,49 @@
+# Routes déclarées en YAML plutôt qu'en attributs.
+#
+# Le routage par attributs demande, sur la ligne 5.4, un lecteur d'annotations
+# (`doctrine/annotations` + son bundle) : trois dépendances de plus dans le
+# graphe, dont aucune ne sert la mesure. Le YAML donne exactement le même coût de
+# routage à l'exécution — la table est compilée dans le cache prod des deux
+# façons — pour une surface d'installation plus petite et plus stable.
+legacy_health:
+    path: /health
+    controller: App\Controller\LegacyController::health
+    methods: [GET]
+
+legacy_product:
+    path: /api/products/{id}
+    controller: App\Controller\LegacyController::product
+    methods: [GET]
+
+legacy_order:
+    path: /api/orders/{id}
+    controller: App\Controller\LegacyController::order
+    methods: [GET]
+
+legacy_user:
+    path: /api/users/{id}
+    controller: App\Controller\LegacyController::user
+    methods: [GET]
+
+legacy_catalogue:
+    path: /api/catalogue
+    controller: App\Controller\LegacyController::catalogue
+    methods: [GET]
+
+legacy_echo:
+    path: /__echo
+    controller: App\Controller\LegacyController::echoHeaders
+    methods: [GET]
+
+# Attrape-tout : la passerelle proxyfie des chemins arbitraires, et un 404
+# Symfony coûte un bootstrap complet exactement comme un 200. Sans cette route,
+# le chemin `proxy` du banc mesurerait des 404 — ce qui n'est pas faux en soi,
+# mais ce n'est pas ce que le tableau prétend décrire.
+legacy_catchall:
+    path: /{path}
+    controller: App\Controller\LegacyController::order
+    requirements:
+        path: '.*'
+    defaults:
+        id: 'catchall'
+    methods: [GET]

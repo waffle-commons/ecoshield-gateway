@@ -1,29 +1,43 @@
 {
-    # Le mode worker est déclaré ICI, explicitement.
-    #
-    # L'image officielle injecte bien `FRANKENPHP_CONFIG` dans SA Caddyfile par
-    # défaut, mais dès qu'on en fournit une (ce que fait ce projet), la variable
-    # n'est plus consommée par personne : FrankenPHP démarre en mode classique et
-    # `frankenphp_handle_request()` échoue à la première requête. Le déclarer au
-    # bon endroit vaut mieux que de dépendre d'une injection invisible — et rend
-    # au passage le nombre de workers lisible et réglable, ce qui est la variable
-    # que toute mesure FinOps veut pouvoir bouger.
-    frankenphp {
-        worker {
-            file ./public/index.php
-            num {$WORKER_COUNT:4}
-        }
-    }
-    order php_server before file_server
+	# Le mode worker est déclaré ICI, explicitement.
+	#
+	# L'image officielle injecte bien `FRANKENPHP_CONFIG` dans SA Caddyfile par
+	# défaut, mais dès qu'on en fournit une (ce que fait ce projet), la variable
+	# n'est plus consommée par personne : FrankenPHP démarre en mode classique et
+	# `frankenphp_handle_request()` échoue à la première requête. Le déclarer au
+	# bon endroit vaut mieux que de dépendre d'une injection invisible — et rend
+	# au passage le nombre de workers lisible et réglable, ce qui est la variable
+	# que toute mesure FinOps veut pouvoir bouger.
+	frankenphp {
+		# Taille du pool de threads PHP, déclarée plutôt que déduite.
+		#
+		# Laissée implicite, FrankenPHP la calcule d'après les CPU visibles : la
+		# capacité du sujet changerait alors avec la machine, et deux campagnes
+		# ne seraient plus comparables. Un banc déclare la capacité des deux
+		# camps — c'est la même discipline que `pm.static` côté PHP-FPM.
+		#
+		# La valeur DOIT rester strictement supérieure au nombre de workers :
+		# les workers occupent des threads du pool à demeure, et un pool
+		# exactement égal ne laisserait aucun thread aux requêtes non-worker
+		# (les fichiers statiques, et la reprise en cas de crash d'un worker).
+		# FrankenPHP refuse d'ailleurs de démarrer dans ce cas.
+		num_threads {$PHP_NUM_THREADS:4}
+
+		worker {
+			file ./public/index.php
+			num {$WORKER_COUNT:4}
+		}
+	}
+	order php_server before file_server
 }
 
 {$SERVER_NAME:localhost} {
-    root * public/
-    encode zstd gzip
+	root * public/
+	encode zstd gzip
 
-    php_server {
-        resolve_root_symlink
-    }
+	php_server {
+		resolve_root_symlink
+	}
 
-    file_server
+	file_server
 }
