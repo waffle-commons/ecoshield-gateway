@@ -2,10 +2,9 @@
     "exclude": [
         "vendor",
         "tests",
-        "var"
-    ],
-    "safe_namespaces": [
-        "Waffle\\Commons\\Contracts\\"
+        "var",
+        "bench",
+        "legacy"
     ],
     "verbose": false
 }

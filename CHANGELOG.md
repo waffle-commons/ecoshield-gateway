@@ -113,7 +113,8 @@ répartition sur plusieurs amonts, authentification de bord. Ces briques relève
 ### Portes de qualité
 
 `composer mago` sans aucune sortie · **42 tests, 99.15 %** de couverture d'instructions ·
-`igor-php` **0 KO** (10 services sur 10 sans état) · `composer validate --strict` conforme.
+`igor-php` **0 KO** (11 fichiers audités, 10 sans état, 1 avertissement documenté) ·
+`composer validate --strict` conforme.
 
 ---
 

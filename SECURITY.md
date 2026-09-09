@@ -96,7 +96,10 @@ réponse privée d'un client à un autre est la fuite classique des caches de pa
 
 Le mode worker garde les services en mémoire d'une requête à l'autre : un état résiduel devient une
 fuite de données entre clients. L'audit `igor-php` vérifie cette propriété et **bloque la
-publication à la moindre alerte** (actuellement 0 KO, 10 services sur 10 sans état).
+publication à la moindre alerte** : actuellement **0 KO** sur 11 fichiers de services audités,
+dont 10 sans état. Le seul avertissement porte sur le point d'entrée SAPI, qui lit `MAX_REQUESTS`
+dans l'environnement du processus une fois au démarrage du worker, avant la boucle de requêtes —
+c'est l'endroit prévu pour cela, et rien n'est conservé d'une requête à l'autre.
 
 ### Erreurs sans divulgation
 
@@ -150,7 +153,7 @@ réseau interne.
 |---|---|
 | Analyse statique (Mago : lint, analyse, périmètre) | 0 diagnostic, aucune ligne de base tolérée |
 | Tests | 42 tests, **99.15 %** de couverture d'instructions |
-| Sûreté en mode worker (`igor-php`) | **0 KO**, 10/10 sans état |
+| Sûreté en mode worker (`igor-php`) | **0 KO** sur 11 fichiers · 10 sans état · 1 avertissement documenté |
 | Audit des dépendances (`composer audit`) | intégré à la CI |
 | Recherche de secrets (TruffleHog) | intégrée à la CI |
 | SBOM (CycloneDX) | produit à chaque exécution de CI |
