@@ -67,8 +67,10 @@ Chiffres issus du banc, rejouables. Protocole complet et **limites** dans
   cache**. Le README annonçait ÷5 ; la mesure dépasse l'objectif.
 - **Mémoire : +0.18 Mio par requête concurrente**, contre **+4.14 Mio** pour PHP-FPM — une croissance
   **23× plus lente**.
-- **Endurance :** pente sous le bruit de l'allocateur sur une charge mixte, avec borne de détection
-  publiée à 95 %.
+- **Endurance : pente compatible avec zéro**, sur deux fenêtres indépendantes — −0.08 ± 0.26 Mio/h
+  sur 1.16 h, et +0.23 ± 0.45 sur 0.50 h. Aucune fuite décelable. La campagne de 3 h visée a échoué
+  sur une contention de la machine hôte, et n'est pas publiée : une fuite plus lente que
+  0.26 Mio/h resterait invisible sur les fenêtres retenues.
 
 ### Corrigé — deux annonces qui n'ont pas survécu à la mesure
 

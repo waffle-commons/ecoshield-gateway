@@ -1,25 +1,7 @@
-    checks_succeeded...: 100.00% 961704 out of 961704
-    checks_failed......: 0.00%   0 out of 961704
-
-    ✓ rescue 200
-    ✓ proxy 200
-    ✓ shield 200
-
-    HTTP
-    http_req_duration..............: med=4.95ms  p(95)=27.24ms p(99)=31.04ms max=152.27ms
-      { expected_response:true }...: med=4.95ms  p(95)=27.24ms p(99)=31.04ms max=152.27ms
-    http_req_failed................: 0.00%  0 out of 961704
-    http_reqs......................: 961704 534.269638/s
-
-    EXECUTION
-    iteration_duration.............: med=32.61ms p(95)=43.1ms  p(99)=51.68ms max=247.75ms
-    iterations.....................: 320568 178.089879/s
-    vus............................: 6      min=6           max=6
-    vus_max........................: 6      min=6           max=6
-
-    NETWORK
-    data_received..................: 485 MB 269 kB/s
-    data_sent......................: 81 MB  45 kB/s
-
-
-
+time="2026-09-09T01:19:15Z" level=warning msg="The test has generated metrics with 100107 unique time series, which is higher than the suggested limit of 100000 and could cause high memory usage. Consider not using high-cardinality values like unique IDs as metric tags or, if you need them in the URL, use the name metric tag or URL grouping. See https://grafana.com/docs/k6/latest/using-k6/tags-and-groups/ for details." component=metrics-engine-ingester
+time="2026-09-09T01:20:26Z" level=warning msg="The test has generated metrics with 200016 unique time series, which is higher than the suggested limit of 100000 and could cause high memory usage. Consider not using high-cardinality values like unique IDs as metric tags or, if you need them in the URL, use the name metric tag or URL grouping. See https://grafana.com/docs/k6/latest/using-k6/tags-and-groups/ for details." component=metrics-engine-ingester
+time="2026-09-09T01:22:27Z" level=warning msg="The test has generated metrics with 400059 unique time series, which is higher than the suggested limit of 100000 and could cause high memory usage. Consider not using high-cardinality values like unique IDs as metric tags or, if you need them in the URL, use the name metric tag or URL grouping. See https://grafana.com/docs/k6/latest/using-k6/tags-and-groups/ for details." component=metrics-engine-ingester
+time="2026-09-09T01:26:16Z" level=warning msg="The test has generated metrics with 800037 unique time series, which is higher than the suggested limit of 100000 and could cause high memory usage. Consider not using high-cardinality values like unique IDs as metric tags or, if you need them in the URL, use the name metric tag or URL grouping. See https://grafana.com/docs/k6/latest/using-k6/tags-and-groups/ for details." component=metrics-engine-ingester
+time="2026-09-09T01:34:16Z" level=warning msg="The test has generated metrics with 1600002 unique time series, which is higher than the suggested limit of 100000 and could cause high memory usage. Consider not using high-cardinality values like unique IDs as metric tags or, if you need them in the URL, use the name metric tag or URL grouping. See https://grafana.com/docs/k6/latest/using-k6/tags-and-groups/ for details." component=metrics-engine-ingester
+time="2026-09-09T01:50:43Z" level=warning msg="The test has generated metrics with 3200139 unique time series, which is higher than the suggested limit of 100000 and could cause high memory usage. Consider not using high-cardinality values like unique IDs as metric tags or, if you need them in the URL, use the name metric tag or URL grouping. See https://grafana.com/docs/k6/latest/using-k6/tags-and-groups/ for details." component=metrics-engine-ingester
+time="2026-09-09T02:23:59Z" level=warning msg="The test has generated metrics with 6400098 unique time series, which is higher than the suggested limit of 100000 and could cause high memory usage. Consider not using high-cardinality values like unique IDs as metric tags or, if you need them in the URL, use the name metric tag or URL grouping. See https://grafana.com/docs/k6/latest/using-k6/tags-and-groups/ for details." component=metrics-engine-ingester

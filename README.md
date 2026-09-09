@@ -79,7 +79,7 @@ conclure** — est dans **[`bench/BENCH-RESULT.md`](./bench/BENCH-RESULT.md)**.
 | **Latence, route reprise** | **1.42 ms** contre 19.62 ms | **÷13.8** |
 | **Latence, réponse en cache** | **2.02 ms** contre 22.81 ms | **÷11.3** |
 | **Croissance mémoire** | **+0.18 Mio** par requête concurrente, contre **+4.14 Mio** pour PHP-FPM | **23× plus lente** |
-| **Stabilité dans le temps** | pente mesurée sous le bruit de l'allocateur | empreinte plate |
+| **Stabilité dans le temps** | pente **compatible avec zéro** sur 1.16 h (±0.26 Mio/h) | empreinte plate |
 | **Économie mémoire à 64 requêtes simultanées** | 141 Mio contre 280 Mio | **−49 %** |
 
 ### Ce que ces chiffres ne disent pas
@@ -95,6 +95,10 @@ Un banc qui ne publie que ses bons résultats n'est pas un banc. Trois réserves
 - **Ce banc ne mesure pas la capacité.** Le générateur de charge partage ses 12 vCPU avec la
   passerelle et le monolithe : au-delà de 16 requêtes concurrentes, les chiffres décrivent la
   contention de l'hôte. Un chiffre de débit exige un générateur sur une machine séparée.
+- **L'endurance n'est établie que sur ~1 heure.** Une fuite plus lente que 0.26 Mio/h — environ
+  6 Mio par jour — resterait invisible sur les fenêtres mesurées. La campagne de 3 h qui
+  resserrerait cette borne a échoué sur une contention de la même machine hôte, et reste à
+  refaire sur une machine dédiée.
 
 ---
 

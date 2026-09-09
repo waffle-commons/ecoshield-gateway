@@ -146,23 +146,32 @@ Le verdict n'est pas « la mémoire a-t-elle bougé » — elle bouge toujours, 
 de l'allocateur — mais **la pente** d'une régression linéaire, en Mio/h, et la
 borne en dessous de laquelle une fuite resterait invisible sur la fenêtre.
 
-**Résultat mesuré** — 30 min, 6 VUs, charge mixte (route reprise + proxy sans
-cache + Shield), relevé démarré après stabilisation :
+**Résultat — aucune fuite décelable, sur deux fenêtres indépendantes.**
 
-| Conteneur | Départ | Fin | Δ | Pente |
-|---|---:|---:|---:|---:|
-| Passerelle | 138.1 MiB | 138.4 MiB | **+0.3 MiB** | **+0.23 MiB/h** |
-| Legacy FPM | 40.9 MiB | 39.6 MiB | −1.3 MiB | +0.05 MiB/h |
+| Fenêtre | Durée | Pente passerelle | Borne (IC 95 %) |
+|---|---:|---:|---:|
+| Soak complet | 0.50 h | **+0.23 MiB/h** | ±0.45 |
+| Préfixe stationnaire du soak de 3 h | 1.16 h | **−0.08 MiB/h** | **±0.26** |
 
-**+0.23 Mio/h sur la passerelle — sous le bruit de l'allocateur.** Aucune fuite
-décelable : l'empreinte du worker résident est stable dans le temps comme elle
-l'est en concurrence.
+Les deux pentes sont **compatibles avec zéro** : l'empreinte du worker résident
+est plate dans le temps comme elle l'est en concurrence. La borne la plus serrée
+obtenue est **±0.26 Mio/h sur 1.16 h**.
 
-*Portée de l'affirmation :* sur une fenêtre de 0.5 h, une fuite plus lente que
-~0.5 Mio/h resterait invisible. C'est suffisant pour écarter une fuite grossière,
-pas pour certifier un service qui tourne des semaines — `BENCH-03` (beta6) a
-soaké 3 h par moteur pour descendre la borne à ~1.7 Mio/h. Allonger la fenêtre
-est la seule façon de la resserrer : `DURATION=3h ./bench/soak.sh`.
+**La campagne de 3 h a échoué**, pour une raison extérieure à la passerelle : la
+machine hôte a décroché après environ soixante-dix minutes. La mémoire des DEUX
+conteneurs s'est effondrée — ce qu'aucune fuite applicative ne produit — sans que
+le conteneur redémarre, et l'échantillonneur lui-même a ralenti de 19 s à 94 s
+entre deux relevés. En fin de campagne la passerelle répondait en 6.7 s au lieu
+de 1.4 ms. C'est l'instrument qui décroche, pas la mesure qui découvre quelque
+chose.
+
+*Portée de l'affirmation :* une fuite plus lente que **~0.26 Mio/h** — environ
+6 Mio par jour — resterait invisible sur ces fenêtres. Suffisant pour écarter une
+fuite grossière, insuffisant pour certifier un service qui tourne des semaines.
+Une campagne de 3 h sur une machine dédiée resserrerait la borne autour de
+±0.05 Mio/h ; c'est ce que `BENCH-03` (beta6) a fait, et c'est ce qui reste à
+faire ici. Détail complet, dont les deux critères de coupe écartés :
+`bench/results/SOAK.md`.
 
 ### Un premier soak a été jeté, et pourquoi
 
