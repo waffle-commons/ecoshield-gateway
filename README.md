@@ -6,8 +6,7 @@ _Moderniser, sécuriser et réduire la facture d'hébergement — sans réécrir
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-green.svg)](./LICENSE)
 [![PHP 8.5](https://img.shields.io/badge/PHP-8.5-777bb4.svg)](https://www.php.net/)
 [![FrankenPHP](https://img.shields.io/badge/runtime-FrankenPHP%20worker-blue.svg)](https://frankenphp.dev/)
-[![Qualité](https://img.shields.io/badge/mago-0%20erreur-success.svg)](./bench/BENCH-RESULT.md)
-[![Couverture](https://img.shields.io/badge/couverture-99.15%25-success.svg)](./bench/BENCH-RESULT.md)
+[![Mesures](https://img.shields.io/badge/mesures-rapport%20reproductible-blue.svg)](./bench/BENCH-RESULT.md)
 
 ---
 
@@ -25,8 +24,8 @@ Les deux issues habituelles sont mauvaises :
 
 | Option | Coût | Risque |
 |---|---|---|
-| Surdimensionner l'infrastructure | Récurrent, croissant | Aucun gain fonctionnel |
-| Réécrire vers un langage asynchrone | 18 à 36 mois | Élevé — un projet de réécriture sur deux échoue |
+| Surdimensionner l'infrastructure | Récurrent, et croissant avec le trafic | Aucun gain fonctionnel en contrepartie |
+| Réécrire l'application | Engagé en totalité avant le premier bénéfice | Élevé — aucun gain tant que le périmètre existant n'est pas reproduit à l'identique |
 
 **EcoShield propose une troisième voie**, incrémentale et réversible.
 
@@ -123,7 +122,7 @@ Un banc qui ne publie que ses bons résultats n'est pas un banc. Trois réserves
 |---|---|---|
 | **1. Audit** | Mesurer l'existant, identifier les routes coûteuses | Rapport chiffré, courbe mémoire, routes candidates |
 | **2. Pilote** | Passerelle en proxy + 1 à 2 routes reprises | Gain constaté en préproduction |
-| **3. Déploiement** | Mise en production progressive, reprise route par route | Réduction de facture mesurée |
+| **3. Déploiement** | Mise en production progressive, reprise route par route | Mesure de l'écart avant/après sur les routes reprises |
 | **4. Exploitation** | Nouvelles reprises au fil du besoin | Dette contenue, pas éliminée — assumé |
 
 ---

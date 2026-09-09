@@ -2,8 +2,11 @@
 
 Une passerelle est, par construction, le premier composant exposé d'une architecture : tout le
 trafic entrant la traverse avant d'atteindre l'application protégée. Sa surface d'attaque est donc
-la surface d'attaque de ce qu'elle protège, et ce document décrit ce qu'elle garantit, ce qu'elle ne
-garantit pas, et comment signaler une faille.
+la surface d'attaque de ce qu'elle protège. Ce document décrit ce qu'elle **applique**, ce qu'elle
+ne couvre pas, et comment signaler une faille.
+
+Le vocabulaire est délibéré : ce sont des mesures techniques implémentées et testées, pas des
+garanties contractuelles. La licence MIT exclut toute garantie, et ce document ne la contredit pas.
 
 ---
 
@@ -45,7 +48,7 @@ Le framework sous-jacent suit son propre cycle : voir la politique de
 
 ---
 
-## 🛡️ Ce que la passerelle garantit
+## 🛡️ Ce que la passerelle applique
 
 Ces propriétés sont implémentées et couvertes par des tests. Elles ne sont pas des intentions.
 
@@ -102,7 +105,7 @@ diagnostique reste dans les journaux.
 
 ---
 
-## ⚠️ Ce que la passerelle NE garantit PAS
+## ⚠️ Ce que la passerelle ne couvre PAS
 
 Ces limites sont des choix documentés, pas des oublis. Les ignorer serait plus dangereux que de les
 énoncer.
