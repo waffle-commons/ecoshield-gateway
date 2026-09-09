@@ -23,6 +23,83 @@ La trajectoire suit la maturité de la passerelle, pas le calendrier du framewor
 
 ---
 
+## [0.1.1] — 2026-09
+
+_Construite et vérifiée sur `waffle-commons` **`0.1.0-beta6`**, installé depuis Packagist._
+
+Version de **correction de mesure**. Elle ne change pas l'étape de la trajectoire — la passerelle
+reste une preuve de concept sur beta6 — mais elle corrige des chiffres publiés qui ne résistaient
+pas à un banc honnête, et livre le harnais qui permet de les rejouer.
+
+### Corrigé — les chiffres du README
+
+Le monolithe de démonstration servant de référence était un **stand-in synthétique** : il simulait
+un bootstrap avec 3 000 `stdClass` et une attente de 15 ms, **sans opcache** — l'image
+`php:8.3-fpm-alpine` ne l'active pas par défaut, si bien qu'il recompilait chaque fichier PHP à
+chaque requête. Il était donc environ **cinq fois plus lent qu'un Symfony réel correctement réglé**,
+et la comparaison le flattait dans un sens tout en le handicapant dans l'autre.
+
+La campagne de référence mesure désormais contre un **vrai Symfony 5.4 LTS** (PHP 8.3, opcache,
+cache applicatif de production) lisant **la même ligne de la même base PostgreSQL** avec la même
+requête. Une seule variable sépare les deux camps.
+
+| Indicateur | Annoncé en 0.1.0 | Mesuré en 0.1.1 |
+|---|---:|---:|
+| Latence, route reprise | ÷13.8 | **÷5.2** (3.82 contre 19.90 ms à 100 req/s) |
+| Croissance mémoire, passerelle | +0.18 Mio/req concurrente | **+0.0015 Mio** |
+| Croissance mémoire, legacy | +4.14 Mio/req concurrente | **+1.3149 Mio** |
+| Croisement mémoire | 16–32 concurrentes | **~44 concurrentes** |
+| Endurance | ~1 h, ±0.26 Mio/h | **3 h, 3 239 963 requêtes, 0 échec, +0.00 Mio/h (±0.03)** |
+| Débit | *« non mesurable sur ce banc »* | **~1 165 contre ~111 req/s** |
+
+L'affirmation « ~80 % d'économie de RAM » est **retirée définitivement** : la forme publiable est la
+pente accompagnée du croisement, jamais un pourcentage isolé.
+
+### Ajouté
+
+- **Harnais de mesure à générateur natif** — `bench/k6/` (scénarios soak, échelle, courbe mémoire,
+  périmètre) et `bench/scripts/` (orchestrateur, échantillonneurs, analyse). k6 tourne sur l'hôte et
+  non dans un conteneur, et chaque conteneur est borné en CPU : c'est ce que
+  `bench/BENCH-RESULT.md` désignait comme sa limite principale.
+- **Monolithe Symfony 5.4 de référence** — `bench/legacy-symfony/`, généré par `bootstrap.sh` et non
+  versionné (seule la recette l'est), avec base PostgreSQL amorcée de 10 000 lignes déterministes.
+- **`BENCHMARK_RESULTS.md`** — protocole, résultats, réserves, et les pièges de méthode rencontrés.
+- **Sonde de diagnostic mémoire** `/__ecoshield/memory`, publiant le tas PHP à l'octet.
+  **Fermée par défaut** : elle ne s'ouvre que si `ECOSHIELD_DIAGNOSTICS` est vrai, parce que
+  l'empreinte mémoire d'une passerelle exposée renseigne un attaquant sur l'effet de ses requêtes.
+- **Route reprise servant de la vraie donnée** — `GET /api/users/{id}`, une lecture indexée via le
+  pool relationnel de `waffle-commons/data`. C'est ce que `RescueController` annonçait depuis
+  l'origine (« une reprise réelle irait chercher la donnée via `waffle-commons/data` »), et c'est ce
+  qui rend la comparaison avec le monolithe honnête : sans elle, un camp interrogeait une base et
+  l'autre non.
+  > **Route de démonstration.** Elle lit une table `users` que seul le jeu d'amorçage du banc
+  > alimente. Sans base configurée, le pool étant paresseux, elle répond **503** et la passerelle
+  > continue de proxyfier et de servir son cache exactement comme avant.
+- **Pilote `pdo_pgsql`** dans l'image de production, seul moteur ajouté.
+- **`num_threads` déclaré** dans la Caddyfile plutôt que déduit de la machine : la capacité du sujet
+  ne doit pas changer avec l'hôte qui l'exécute.
+- **`pcov` dans l'étage `dev`** de l'image — et uniquement là. Sans pilote de couverture, PHPUnit
+  12.5 charge la suite puis **sort en erreur sans exécuter un seul test** : l'image de développement
+  ne pouvait pas faire tourner sa propre suite.
+
+### Corrigé
+
+- **Nginx résolvait `legacy-fpm` une seule fois, au démarrage.** Toute reconstruction de l'image FPM
+  changeait l'IP du conteneur et Nginx continuait d'appeler l'ancienne : **502 sur toutes les
+  routes**, sans rapport apparent avec la modification. La résolution se fait désormais à
+  l'exécution, via le résolveur intégré de Docker.
+- **PHP-FPM vidait l'environnement de ses enfants** (`clear_env` implicite) : aucune variable
+  d'environnement du conteneur n'atteignait PHP.
+- **Les étages `dev` et `prod` partageaient un nom d'image**, si bien qu'une construction en mode
+  mesure écrasait l'image de développement.
+
+### Portes de qualité
+
+`composer mago` sans aucune sortie · **52 tests, 162 assertions, 99.29 %** de couverture ·
+`igor-php` **0 KO** · **280/280** assertions de périmètre, aucun contournement.
+
+---
+
 ## [0.1.0] — 2026-09
 
 _Construite et vérifiée sur `waffle-commons` **`0.1.0-beta6`**, installé depuis Packagist._

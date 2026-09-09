@@ -1,6 +1,6 @@
 # Campagne d'endurance et de périmètre — EcoShield Gateway
 
-> **Version mesurée :** `0.1.0` sur `waffle-commons/*` `0.1.0-beta6`.
+> **Version mesurée :** `0.1.1` sur `waffle-commons/*` `0.1.0-beta6`.
 > **Date :** 2026-09-09 · **Branche :** `perf/ecoshield-gateway-k6-soak`
 > **Campagne :** complète — endurance 3 h, échelle de débit, courbe mémoire, périmètre.
 > **Harnais :** `bench/k6/` + `bench/scripts/` (générateur k6 **natif sur l'hôte**).
