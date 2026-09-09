@@ -38,6 +38,11 @@
 #   RATE=300 DURATION=3h bench/scripts/perf-run.sh soak
 #   RATES=50,100,200,400 STEP_DURATION=2m bench/scripts/perf-run.sh ladder
 #   VUS_STEPS=8,16,32,64 bench/scripts/perf-run.sh memscale
+#   LADDER_WORKLOADS=rescue MEMSCALE_SUBJECTS='rescue legacy' bench/scripts/perf-run.sh full
+#
+# Durée indicative de `full` avec les défauts : ~55 min
+#   soak 4 min · échelle 22 min (2 charges) · courbe mémoire 28 min · périmètre <1 min
+# Un soak de qualité publication (DURATION=3h) porte le total à ~3 h 50.
 #
 # La campagne complète suppose le monolithe Symfony en place — sans quoi le
 # stand-in synthétique répond, ce qui reste valide mais ne mesure pas la même
@@ -68,7 +73,25 @@ REPEATS="${REPEATS:-20}"
 RATES="${RATES:-50,100,200,400,800}"
 STEP_DURATION="${STEP_DURATION:-2m}"
 VUS_STEPS="${VUS_STEPS:-8,16,32,64,128}"
-LADDER_WORKLOAD="${LADDER_WORKLOAD:-rescue}"
+
+# Les charges des deux expériences comparatives, et pourquoi CE défaut.
+#
+# `rescue` et `legacy` servent une charge utile STATIQUE : la passerelle ne
+# consulte rien, le monolithe reconstruit son noyau puis répond de mémoire. La
+# comparaison contient alors un déséquilibre — un camp fait une entrée-sortie,
+# l'autre non — qui est précisément ce que l'ajout d'une base a corrigé.
+#
+# Le défaut porte donc sur `dbread` / `legacydb` : MÊME requête, MÊME base, MÊME
+# ligne. Ce qui subsiste dans l'écart est le démarrage du framework, et rien
+# d'autre. C'est aussi la seule charge qui tienne réellement la concurrence
+# ouverte, ce dont la courbe mémoire a besoin : une route qui répond en
+# microsecondes n'occupe pas un enfant PHP-FPM assez longtemps pour que le
+# nombre d'enfants reflète la concurrence demandée.
+#
+# Les charges statiques restent disponibles pour isoler le coût du CHEMIN seul :
+#   LADDER_WORKLOADS=rescue MEMSCALE_SUBJECTS='rescue legacy' …
+LADDER_WORKLOADS="${LADDER_WORKLOADS:-dbread legacydb}"
+MEMSCALE_SUBJECTS="${MEMSCALE_SUBJECTS:-dbread legacydb}"
 
 OUT="${OUT:-bench/results}"
 mkdir -p "$OUT"
@@ -249,14 +272,23 @@ run_ladder() {
   local rss_fpm=$!
   trap 'kill "$rss_gw" "$rss_fpm" 2>/dev/null || true' EXIT
 
-  say "échelle : [${RATES}] req/s x ${STEP_DURATION}, charge « ${LADDER_WORKLOAD} »"
-  # Une seule exécution k6 : les marches sont découpées par ÉTIQUETTE, pas par
-  # horodatage, donc aucun redécoupage a posteriori n'est nécessaire.
-  k6 run \
-    -e TARGET="$TARGET" -e LEGACY_TARGET="$LEGACY_TARGET" \
-    -e RATES="$RATES" -e STEP_DURATION="$STEP_DURATION" \
-    -e WORKLOAD="$LADDER_WORKLOAD" \
-    bench/k6/scenarios/ladder.js 2>&1 | tee "$OUT/perf-ladder-k6.txt"
+  # UNE charge à la fois, avec un repos entre les deux : l'échelle de la
+  # passerelle et celle du monolithe ne doivent jamais tourner ensemble, sinon
+  # chacune mesure la contention causée par l'autre.
+  local workload
+  for workload in $LADDER_WORKLOADS; do
+    say "repos (${SETTLE}s) avant l'échelle « ${workload} »"
+    sleep "$SETTLE"
+
+    say "échelle : [${RATES}] req/s x ${STEP_DURATION}, charge « ${workload} »"
+    # Une seule exécution k6 par charge : les marches sont découpées par
+    # ÉTIQUETTE, pas par horodatage, donc aucun redécoupage n'est nécessaire.
+    k6 run \
+      -e TARGET="$TARGET" -e LEGACY_TARGET="$LEGACY_TARGET" \
+      -e RATES="$RATES" -e STEP_DURATION="$STEP_DURATION" \
+      -e WORKLOAD="$workload" \
+      bench/k6/scenarios/ladder.js 2>&1 | tee "$OUT/perf-ladder-${workload}-k6.txt"
+  done
 
   kill "$rss_gw" "$rss_fpm" 2>/dev/null || true
   trap - EXIT
@@ -278,9 +310,14 @@ run_memscale() {
   # ce qui évite d'avoir à retrouver les frontières des marches dans un CSV
   # continu, exercice d'horodatage où une erreur ne se voit pas.
   local subject vus label rss_csv sampler container
-  for subject in rescue legacy; do
-    container="$GATEWAY_CT"
-    if [[ "$subject" == 'legacy' ]]; then container="$FPM_CT"; fi
+  for subject in $MEMSCALE_SUBJECTS; do
+    # Le conteneur RELEVÉ est celui qui sert la charge : mesurer le RSS de la
+    # passerelle pendant qu'on charge le monolithe rendrait une courbe plate qui
+    # ne décrit rien.
+    case "$subject" in
+      legacy | legacydb) container="$FPM_CT" ;;
+      *) container="$GATEWAY_CT" ;;
+    esac
 
     for vus in ${VUS_STEPS//,/ }; do
       label="memscale-${subject}-c${vus}"
