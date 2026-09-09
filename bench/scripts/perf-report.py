@@ -461,19 +461,49 @@ def main(directory: str) -> int:
             "et c'est la latence qui encaisse. Un modèle fermé réduirait la charge "
             "dès que le sujet ralentit, et un sujet qui ralentit paraîtrait sain.\n"
         )
-        print("| Débit visé | Débit atteint | p50 | p95 | p99 | échecs | itérations perdues | Publiable |")
+        print("| Débit visé | Débit atteint | p50 | p95 | p99 | échecs | itérations perdues | Lecture |")
         print("|---:|---:|---:|---:|---:|---:|---:|---|")
+        saturated, suspect = [], []
         for rate, achieved, d, failed, n_dropped in rows:
-            ok = n_dropped == 0
+            # Deux causes très différentes produisent des itérations perdues, et
+            # les confondre jetterait le résultat le plus intéressant du banc.
+            #
+            #  - Le SUJET sature : les VUs restent bloqués sur des réponses
+            #    lentes, la latence explose et le débit atteint plafonne. C'est
+            #    une MESURE, pas une panne — c'est même le genou recherché.
+            #  - Le GÉNÉRATEUR flanche : il n'émet pas assez vite alors que le
+            #    sujet répond normalement. Là, le chiffre ne décrit rien.
+            #
+            # La latence discrimine : un sujet saturé répond en secondes, un
+            # générateur à bout laisse le sujet rapide.
+            p99 = d.get("p(99)") or 0.0
+            if n_dropped == 0:
+                verdict = "débit tenu"
+            elif p99 >= 1000.0:
+                verdict = "**sujet saturé**"
+                saturated.append(rate)
+            else:
+                verdict = "**générateur suspect**"
+                suspect.append(rate)
             print(
                 f"| {rate} req/s | {fmt(achieved)} | {fmt(d.get('med'))} | {fmt(d.get('p(95)'))} | "
                 f"{fmt(d.get('p(99)'))} | {fmt((failed.get('rate') or 0) * 100, 2)} % | "
-                f"{n_dropped} | {'oui' if ok else '**NON**'} |"
+                f"{n_dropped} | {verdict} |"
             )
         print()
-        blocked = [r for r, _, _, _, n in rows if n > 0]
+        blocked = suspect
+        if saturated:
+            top = min(saturated)
+            print(
+                f"> **Saturation du sujet à partir de {top} req/s.** Au-delà, le débit "
+                f"atteint plafonne et la latence part en secondes : ces lignes ne sont "
+                f"pas des chiffres de latence *au débit visé* — le débit visé n'a jamais "
+                f"été servi — mais elles sont la MESURE du genou, et c'est le résultat "
+                f"que l'échelle existe pour produire. Le plafond réel se lit dans la "
+                f"colonne « débit atteint », pas dans la colonne « visé ».\n"
+            )
         print(
-            "> **La colonne « Publiable » n'est pas un avis, c'est une règle mécanique.** "
+            "> **La colonne « Lecture » n'est pas un avis, c'est une règle mécanique.** "
             "k6 incrémente `dropped_iterations` quand son exécuteur ne parvient pas à "
             "émettre à la cadence demandée — VUs tous occupés, ou générateur à court de "
             "CPU. Une marche où ce compteur est non nul n'a pas subi la charge annoncée : "
@@ -483,11 +513,13 @@ def main(directory: str) -> int:
         )
         if blocked:
             print(
-                f"> Marches écartées ici : **{', '.join(str(b) + ' req/s' for b in blocked)}**. "
-                "Au-delà, ce banc mesure son propre générateur. Un chiffre de capacité "
-                "au-dessus de ce seuil exige un générateur sur une machine distincte.\n"
+                f"> Marches ÉCARTÉES (générateur suspect) : "
+                f"**{', '.join(str(b) + ' req/s' for b in blocked)}**. Le sujet répondait "
+                "vite et le débit n'a pourtant pas été tenu : c'est le banc qui a manqué "
+                "de souffle, pas le sujet qui a plié. Un chiffre de capacité au-dessus de "
+                "ce seuil exige un générateur sur une machine distincte.\n"
             )
-        else:
+        elif not saturated:
             print(
                 "> Aucune marche écartée : le générateur a tenu la cadence sur toute "
                 "l'échelle, et chaque ligne décrit bien le sujet.\n"
