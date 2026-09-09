@@ -72,9 +72,11 @@ pente accompagnée du croisement, jamais un pourcentage isolé.
   l'origine (« une reprise réelle irait chercher la donnée via `waffle-commons/data` »), et c'est ce
   qui rend la comparaison avec le monolithe honnête : sans elle, un camp interrogeait une base et
   l'autre non.
-  > **Route de démonstration.** Elle lit une table `users` que seul le jeu d'amorçage du banc
-  > alimente. Sans base configurée, le pool étant paresseux, elle répond **503** et la passerelle
-  > continue de proxyfier et de servir son cache exactement comme avant.
+  > **Route de démonstration**, au même titre que `/api/products/{id}` : elle lit une table `users`
+  > que seul le jeu d'amorçage du banc alimente. Sans base configurée, le pool étant paresseux, elle
+  > répond **503** et la passerelle continue de proxyfier et de servir son cache exactement comme
+  > avant. Le README liste désormais **toutes les routes livrées** avec leur statut — les deux
+  > routes de démonstration sont à supprimer lorsqu'on reprend ses propres routes.
 - **Pilote `pdo_pgsql`** dans l'image de production, seul moteur ajouté.
 - **`num_threads` déclaré** dans la Caddyfile plutôt que déduit de la machine : la capacité du sujet
   ne doit pas changer avec l'hôte qui l'exécute.

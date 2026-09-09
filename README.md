@@ -194,6 +194,23 @@ curl localhost:8099/api/products/42      # route reprise, servie par le worker
 curl -i localhost:8099/api/catalogue     # proxyfiée + cache (en-tête X-EcoShield-Cache)
 ```
 
+### Les routes livrées
+
+Une passerelle est faite pour qu'on y ajoute **ses** routes. Celles qui sont livrées sont donc peu
+nombreuses, et leur statut est explicite — il faut savoir lesquelles retirer avant de déployer.
+
+| Route | Statut | Comportement |
+|---|---|---|
+| `GET /__ecoshield/health` | **exploitation** | Sonde de vivacité. Rend compte de **la passerelle seule** : elle ne doit pas se déclarer malade parce que l'amont est tombé. |
+| `GET /__ecoshield/memory` | **diagnostic, fermée par défaut** | Publie le tas PHP du worker. Ouverte uniquement si `ECOSHIELD_DIAGNOSTICS` est vrai ; répond 404 sinon. Publier son empreinte mémoire en permanence renseignerait un attaquant sur l'effet de ses requêtes. |
+| `GET /api/products/{id}` | **démonstration** | Route reprise à charge utile **statique**. Elle illustre le coût du chemin, pas un domaine métier. |
+| `GET /api/users/{id}` | **démonstration** | Route reprise servant de la **vraie donnée**, via le pool relationnel. Elle lit une table `users` que **seul le jeu d'amorçage du banc** alimente : sans base configurée, le pool étant paresseux, elle répond **503** et le reste de la passerelle fonctionne normalement. |
+| `{path}` *(toutes méthodes)* | **cœur du produit** | Attrape-tout de priorité minimale : Shield puis proxy vers le monolithe. C'est la route qui ne se retire pas. |
+
+> **Les deux routes de démonstration sont à supprimer** quand vous reprenez vos propres routes.
+> Elles existent pour que le banc mesure quelque chose de comparable, et pour montrer à quoi
+> ressemble une reprise — l'une sans source de données, l'autre avec.
+
 ### Rejouer les mesures
 
 Le banc s'exécute sur l'image de **production** — mesurer l'image de développement reviendrait à
