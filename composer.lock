@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0820af822d7ecb9b6dc7e475fbee19dd",
+    "content-hash": "1b70b094a40cedfe1f19990e3c8f6000",
     "packages": [
         {
             "name": "predis/predis",
@@ -1386,16 +1386,16 @@
     "packages-dev": [
         {
             "name": "carthage-software/mago",
-            "version": "1.47.6",
+            "version": "1.50.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/carthage-software/mago.git",
-                "reference": "ad48106b8d1dbf3140f3a4bd4d244a5e47c9e495"
+                "reference": "74c48ba74d708f38259c6325a4f12ff443fb19bf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/carthage-software/mago/zipball/ad48106b8d1dbf3140f3a4bd4d244a5e47c9e495",
-                "reference": "ad48106b8d1dbf3140f3a4bd4d244a5e47c9e495",
+                "url": "https://api.github.com/repos/carthage-software/mago/zipball/74c48ba74d708f38259c6325a4f12ff443fb19bf",
+                "reference": "74c48ba74d708f38259c6325a4f12ff443fb19bf",
                 "shasum": ""
             },
             "require": {
@@ -1437,7 +1437,7 @@
             ],
             "support": {
                 "issues": "https://github.com/carthage-software/mago/issues",
-                "source": "https://github.com/carthage-software/mago/tree/1.47.6"
+                "source": "https://github.com/carthage-software/mago/tree/1.50.0"
             },
             "funding": [
                 {
@@ -1445,7 +1445,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-09-04T17:48:48+00:00"
+            "time": "2026-09-21T11:41:07+00:00"
         },
         {
             "name": "composer/spdx-licenses",
@@ -1698,16 +1698,16 @@
         },
         {
             "name": "igor-php/igor-php",
-            "version": "v0.7.0",
+            "version": "v0.9.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/igor-php/igor-php.git",
-                "reference": "c22297f5916f47d9f35c20f14f9ea536d9315880"
+                "reference": "48935c8cf42d0764a9d54f22e9c290816c5caa91"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/igor-php/igor-php/zipball/c22297f5916f47d9f35c20f14f9ea536d9315880",
-                "reference": "c22297f5916f47d9f35c20f14f9ea536d9315880",
+                "url": "https://api.github.com/repos/igor-php/igor-php/zipball/48935c8cf42d0764a9d54f22e9c290816c5caa91",
+                "reference": "48935c8cf42d0764a9d54f22e9c290816c5caa91",
                 "shasum": ""
             },
             "require": {
@@ -1742,9 +1742,9 @@
             ],
             "support": {
                 "issues": "https://github.com/igor-php/igor-php/issues",
-                "source": "https://github.com/igor-php/igor-php/tree/v0.7.0"
+                "source": "https://github.com/igor-php/igor-php/tree/v0.9.7"
             },
-            "time": "2026-06-08T12:30:49+00:00"
+            "time": "2026-09-22T20:33:54+00:00"
         },
         {
             "name": "myclabs/deep-copy",
