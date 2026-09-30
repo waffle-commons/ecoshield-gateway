@@ -23,6 +23,32 @@ La trajectoire suit la maturité de la passerelle, pas le calendrier du framewor
 
 ---
 
+## [Non publié]
+
+_Toujours construite sur `waffle-commons` **`0.1.0-beta6`** ; seule la chaîne d'outils change._
+
+### Modifié
+
+- **Chaîne d'outils alignée sur l'écosystème beta7** : `carthage-software/mago` `^1.50` (1.50.0) et
+  `igor-php/igor-php` `^0.9.7`. La CI épingle l'auditeur igor en **0.9.7**, avec la vérification stricte
+  de l'écosystème : binaire en cache supprimé, puis correspondance exacte de la ligne de version. L'ancien
+  contrôle `grep -qF` pouvait valider la bannière de téléchargement au lieu du binaire réellement exécuté.
+- **Actions GitHub alignées sur le modèle de composant** : `actions/checkout` v7, `actions/cache` v6, et
+  TruffleHog épinglé en `v3.97.9` au lieu de suivre `main`.
+
+### Corrigé
+
+Deux constats du passage à igor 0.9.7 :
+
+- Le contrôleur frontal lit `MAX_REQUESTS` dans le registre d'environnement (processus > `.env`), comme
+  `APP_ENV`, et non plus dans la superglobale `$_SERVER` — même correctif que le squelette du framework.
+- `ResponseCache::store()` porte un `#[WorkerSafe]` motivé. igor 0.9.7 signale toute écriture *à travers*
+  un service injecté. Ici, l'écriture part vers le backend PSR-16 : Redis dans la configuration livrée, ou
+  le cache fichier. L'adaptateur `array` implémente `ResettableInterface` et `Container::reset()` le vide
+  après chaque requête. Motif vérifié dans le code, pas supposé ; l'audit rend 12 OK, 0 KO, 0 WARN.
+
+---
+
 ## [0.1.1] — 2026-09
 
 _Construite et vérifiée sur `waffle-commons` **`0.1.0-beta6`**, installé depuis Packagist._

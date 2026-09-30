@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Shield;
 
+use IgorPhp\IgorBundle\Attribute\WorkerSafe;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
@@ -114,6 +115,9 @@ final readonly class ResponseCache
      * Mémorise la réponse amont quand elle est mutualisable, et la rend
      * inchangée dans tous les cas.
      */
+    #[WorkerSafe(
+        reason: 'the write goes through the injected PSR-16 cache to its backend, never into this object: Redis in the shipped configuration, or the file store; the array adapter implements ResettableInterface and Container::reset() clears it after every request. This class is final readonly and holds no state of its own',
+    )]
     public function store(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         if (!$this->isCacheable($request) || !$this->isStorable($response)) {
