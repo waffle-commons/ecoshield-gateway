@@ -17,8 +17,10 @@
 #
 # Modes :
 #   install  copie, régénère composer.local.json, part de composer.lock (mago,
-#            phpunit et igor restent ceux du verrou) et ne met à jour que
-#            waffle-commons/* et leurs dépendances ;
+#            phpunit et igor restent ceux du verrou), ne met à jour que
+#            waffle-commons/* et leurs dépendances, puis les réinstalle : quand
+#            seul le chemin des copies change, Composer n'a « rien à mettre à
+#            jour » et vendor/composer/installed.json garderait l'ancien ;
 #   resync   recopie, puis `composer reinstall 'waffle-commons/*'` (la référence
 #            d'un paquet « path » ne change pas quand seul src/ change).
 #
@@ -84,6 +86,8 @@ case "$MODE" in
     [ -f "$GATEWAY/composer.local.lock" ] || cp "$GATEWAY/composer.lock" "$GATEWAY/composer.local.lock"
     docker exec -w "$IN_CONTAINER" -e COMPOSER=composer.local.json "$CONTAINER" \
       composer update 'waffle-commons/*' --with-all-dependencies --no-interaction --no-progress
+    docker exec -w "$IN_CONTAINER" -e COMPOSER=composer.local.json "$CONTAINER" \
+      composer reinstall 'waffle-commons/*' --no-interaction --no-progress
     ;;
   resync)
     docker exec -w "$IN_CONTAINER" -e COMPOSER=composer.local.json "$CONTAINER" \
