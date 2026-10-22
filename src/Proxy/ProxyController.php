@@ -118,8 +118,12 @@ final readonly class ProxyController
         $upstreamRequest = $this->applyForwardedHeaders($upstreamRequest, $request);
 
         // The inbound stream is passed through by reference, NOT copied — this is
-        // what makes memory constant with respect to body size.
-        $upstreamRequest = $upstreamRequest->withBody($request->getBody());
+        // what makes memory constant with respect to body size. A request without
+        // a body keeps the factory's empty one: forwarding php://input for a GET
+        // would send an empty chunked body upstream.
+        if (self::carriesBody($request)) {
+            $upstreamRequest = $upstreamRequest->withBody($request->getBody());
+        }
 
         try {
             $response = $this->client->sendRequest($upstreamRequest);
@@ -130,6 +134,37 @@ final readonly class ProxyController
         }
 
         return $this->sanitiseResponse($response);
+    }
+
+    /**
+     * Whether the inbound request has a body to forward.
+     *
+     * In a FrankenPHP worker the body is `php://input`, which cannot report its
+     * size, and the client's framing does not always reach PHP: a chunked upload
+     * arrives with neither `Content-Length` nor `Transfer-Encoding`, exactly like
+     * a GET. Headers cannot tell them apart, so the stream is asked instead: one
+     * byte is read from its start, then it is rewound. The first rewind matters:
+     * the request factory has already read a JSON POST body to parse it, and
+     * left the stream at its end. A stream that cannot be rewound is forwarded
+     * as it is, since peeking would consume it.
+     */
+    private static function carriesBody(ServerRequestInterface $request): bool
+    {
+        $body = $request->getBody();
+        $size = $body->getSize();
+        if ($size !== null) {
+            return $size > 0;
+        }
+
+        if (!$body->isSeekable()) {
+            return true;
+        }
+
+        $body->rewind();
+        $empty = $body->read(1) === '';
+        $body->rewind();
+
+        return !$empty;
     }
 
     /**

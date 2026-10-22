@@ -94,6 +94,17 @@ publication sur Packagist. La version `0.2.0` (alpha) sera construite et vérifi
 
 ### Corrigé
 
+- **Les requêtes avec corps atteignent enfin le monolithe.** Depuis la 0.1.0, tout POST, PUT ou PATCH
+  relayé vers un monolithe derrière nginx recevait **400**.
+  - Le client HTTP du framework envoyait à la fois `Transfer-Encoding: chunked` et le `Content-Length` du
+    client : deux cadrages dans une même requête, ce que la RFC 9112 §6.1 interdit. C'est corrigé dans
+    `waffle-commons/http-client` 0.1.0-beta7.
+  - Côté passerelle, une requête sans corps part désormais sans corps. Jusqu'ici, chaque GET relayé
+    emportait un corps vide en `chunked` et une poignée de main `Expect: 100-continue`.
+  - Le corps se lit depuis son début, parce que la fabrique de requête du framework a déjà lu un POST JSON
+    pour l'analyser.
+  - Vérifié sur le fil puis dans le laboratoire : POST, PUT, PATCH et DELETE en JSON, un formulaire, un envoi
+    `chunked` et 1 Mio atteignent le monolithe Symfony.
 - **Une panne de Redis ne fait plus tomber la passerelle.** Le Shield laissait remonter l'indisponibilité
   de son stockage : Redis arrêté, toute route mise en cache répondait 500, et chaque requête était
   journalisée en `critical`. Le cache est une optimisation, l'amont reste la source : une lecture devient

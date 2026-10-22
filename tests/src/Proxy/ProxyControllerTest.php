@@ -18,6 +18,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamInterface;
 use Psr\Log\NullLogger;
 use Waffle\Commons\Contracts\CircuitBreaker\Exception\CircuitOpenExceptionInterface;
 use Waffle\Commons\Http\Factory\RequestFactory;
@@ -25,6 +26,7 @@ use Waffle\Commons\Http\Factory\StreamFactory;
 use Waffle\Commons\Http\Factory\UriFactory;
 use Waffle\Commons\Http\Response;
 use Waffle\Commons\Http\ServerRequest;
+use Waffle\Commons\Http\Stream;
 
 #[CoversClass(ProxyController::class)]
 #[CoversClass(HopByHopHeaders::class)]
@@ -330,6 +332,72 @@ final class ProxyControllerTest extends TestCase
         $request = $this->makeRequest('POST')->withBody($body);
 
         $this->makeController($client)->proxy($request);
+
+        self::assertSame($body, $client->lastRequest()?->getBody());
+    }
+
+    public function testARequestWithoutABodyIsForwardedWithoutOne(): void
+    {
+        // Forwarding an empty inbound stream would let the HTTP client frame a
+        // body anyway: a GET with an empty chunked body and an Expect handshake.
+        $client = new RecordingClient(new Response(statusCode: 200));
+        $request = $this->makeRequest();
+
+        $this->makeController($client)->proxy($request);
+
+        self::assertNotSame($request->getBody(), $client->lastRequest()?->getBody());
+        self::assertSame(0, $client->lastRequest()?->getBody()->getSize());
+    }
+
+    public function testAnEmptyPhpInputIsNotForwarded(): void
+    {
+        // The real inbound stream of a worker: no size, seekable. In the CLI it
+        // is empty — exactly what a bodyless GET looks like to the proxy.
+        $client = new RecordingClient(new Response(statusCode: 200));
+        $input = new Stream('php://input', 'r');
+        self::assertNull($input->getSize());
+
+        $this->makeController($client)->proxy($this->makeRequest()->withBody($input));
+
+        self::assertNotSame($input, $client->lastRequest()?->getBody());
+    }
+
+    public function testAnUnsizedBodyIsPeekedFromItsStartAndForwardedByReference(): void
+    {
+        // A chunked upload reaches PHP without Content-Length or Transfer-Encoding,
+        // like a GET: only the stream can tell. And a JSON POST body has already
+        // been read to its end by the request factory, to parse it: this stream
+        // yields bytes only once rewound. Peeking where it stands would see an
+        // empty body and forward the POST without one (nginx then answers 400).
+        $client = new RecordingClient(new Response(statusCode: 200));
+        $rewound = false;
+        $body = $this->createMock(StreamInterface::class);
+        $body->method('getSize')->willReturn(null);
+        $body->method('isSeekable')->willReturn(true);
+        $body
+            ->expects($this->exactly(2))
+            ->method('rewind')
+            ->willReturnCallback(static function () use (&$rewound): void {
+                $rewound = true;
+            });
+        $body->method('read')->willReturnCallback(static function () use (&$rewound): string {
+            return $rewound ? 'p' : '';
+        });
+
+        $this->makeController($client)->proxy($this->makeRequest('POST')->withBody($body));
+
+        self::assertSame($body, $client->lastRequest()?->getBody());
+    }
+
+    public function testAStreamThatCannotRewindIsForwardedUnpeeked(): void
+    {
+        $client = new RecordingClient(new Response(statusCode: 200));
+        $body = $this->createMock(StreamInterface::class);
+        $body->method('getSize')->willReturn(null);
+        $body->method('isSeekable')->willReturn(false);
+        $body->expects($this->never())->method('read');
+
+        $this->makeController($client)->proxy($this->makeRequest('POST')->withBody($body));
 
         self::assertSame($body, $client->lastRequest()?->getBody());
     }
