@@ -31,9 +31,16 @@ composer.phar
 # README — le versionner créerait une troisième source à tenir à jour.
 /RELEASE.md
 
-# Monolithe Symfony du banc : généré par `bench/legacy-symfony/bootstrap.sh`,
-# des dizaines de mégaoctets de `vendor/`, reconstruit à l'identique depuis le
-# script et les stubs suivis. Même convention que `bench/engines/symfony-app/`
-# côté écosystème — on versionne la RECETTE, jamais le résultat de l'installation.
-/bench/legacy-symfony/app/
+# Monolithe Symfony du banc et du laboratoire : l'application et son verrou sont
+# suivis, pas ce que `bench/legacy-symfony/bootstrap.sh` installe depuis ce verrou
+# (des dizaines de mégaoctets de `vendor/`, et le cache). Son `.env` non plus :
+# celui que Flex génère porte un APP_SECRET tiré au hasard, et le script en écrit
+# un sans secret sur un clone neuf. Les fichiers Docker de la recette Doctrine ne
+# servent à rien ici : la pile est celle de la passerelle.
+/bench/legacy-symfony/app/vendor/
+/bench/legacy-symfony/app/var/
+/bench/legacy-symfony/app/.env
+/bench/legacy-symfony/app/.env.dev
+/bench/legacy-symfony/app/compose.yaml
+/bench/legacy-symfony/app/compose.override.yaml
 /bench/legacy-symfony/.composer.phar

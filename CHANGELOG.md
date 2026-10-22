@@ -52,6 +52,16 @@ publication sur Packagist. La version `0.2.0` (alpha) sera construite et vérifi
   - Redis indisponible, le trafic passe (`on_storage_failure: open`), avec un avertissement dans le journal.
 - **Le Shield sert aussi la route reprise** `/api/users/{id}` (`gateway.rescue.cache`) : un hit ne touche
   pas la base, et une réponse 503 (base indisponible) n'est jamais mise en cache.
+- **Laboratoire Strangler Fig** (`docker-compose.lab.yml`) : la passerelle devant le vrai monolithe
+  Symfony 5.4 du banc, avec la base PostgreSQL que les deux camps lisent. On y observe la route reprise
+  derrière le Shield, une route proxyfiée mise en cache, une route proxyfiée privée, le limiteur, et le
+  disjoncteur quand le monolithe tombe. Aucune borne CPU : c'est un terrain d'essai, pas une mesure.
+- **Le monolithe de banc est versionné et s'installe depuis son verrou.** `bench/legacy-symfony/app/` est
+  suivi, sans `vendor/`, `var/` ni `.env`. `bootstrap.sh` installe ses dépendances depuis `composer.lock`,
+  avec des images PHP 8.3 et Composer épinglées par digest. Jusqu'ici, le script recréait le monolithe à
+  chaque exécution (`create-project`, `composer require` sans contrainte, recettes Flex lues sur le
+  réseau, installeur Composer exécuté sans vérification de signature). C'est le monolithe que la campagne
+  0.1.1 a mesuré (Symfony 5.4.45, doctrine/dbal 4.4.4) ; les stubs, désormais redondants, disparaissent.
 
 ### Modifié
 

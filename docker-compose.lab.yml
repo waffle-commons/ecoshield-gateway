@@ -1,0 +1,70 @@
+# Le LABORATOIRE Strangler Fig : la passerelle devant un VRAI monolithe.
+#
+#   bench/legacy-symfony/bootstrap.sh       # installe le monolithe depuis son verrou
+#   docker compose -f docker-compose.yml -f docker-compose.lab.yml up -d --build
+#
+# Le défaut (docker-compose.yml) reste la démonstration de trente secondes, devant
+# un stand-in synthétique. Le laboratoire le remplace par le monolithe Symfony 5.4
+# du banc, installé depuis un verrou versionné, et ajoute la base PostgreSQL que
+# les deux camps lisent : 10 000 lignes déterministes (bench/sql/init.sql). Toutes
+# les images sont épinglées par digest — le laboratoire se reconstruit à
+# l'identique.
+#
+# Ce qu'on y observe : une route reprise servie par le worker derrière le Shield
+# (/api/users/{id}), une route proxyfiée mise en cache (/api/catalogue), une route
+# proxyfiée privée (/api/orders/{id}), le limiteur de débit, et le disjoncteur
+# quand le monolithe tombe (`docker compose stop legacy-fpm`). Aucune borne CPU :
+# c'est un terrain d'essai, pas une mesure — la mesure, c'est
+# docker-compose.perf.yml.
+#
+# Seule la passerelle publie un port, comme en production.
+services:
+  gateway:
+    environment:
+      DB_DRIVER: 'pgsql'
+      DB_HOST: 'lab-postgres'
+      DB_PORT: '5432'
+      DB_NAME: 'bench'
+      DB_USER: 'bench'
+      DB_PASSWORD: 'bench'
+    depends_on:
+      - lab-postgres
+
+  # Le monolithe : Symfony 5.4 sur PHP-FPM 8.3, code copié dans l'image (jamais
+  # monté : l'opcache revalide sinon chaque fichier à travers virtiofs).
+  legacy-fpm:
+    image: !reset null
+    build:
+      context: .
+      dockerfile: bench/legacy-symfony/Dockerfile
+    volumes: !reset []
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: '0'
+      DB_HOST: 'lab-postgres'
+      DB_PORT: '5432'
+      DB_NAME: 'bench'
+      DB_USER: 'bench'
+      DB_PASSWORD: 'bench'
+    depends_on:
+      - lab-postgres
+
+  # Configuration API seule : toutes les requêtes vont au contrôleur frontal.
+  legacy-nginx:
+    volumes:
+      - ./bench/legacy-symfony/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+  lab-postgres:
+    image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
+    container_name: ecoshield-lab-postgres
+    environment:
+      POSTGRES_DB: 'bench'
+      POSTGRES_USER: 'bench'
+      POSTGRES_PASSWORD: 'bench'
+    volumes:
+      - ./bench/sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U bench -d bench']
+      interval: 5s
+      timeout: 3s
+      retries: 10
