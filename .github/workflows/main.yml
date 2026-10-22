@@ -53,6 +53,8 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          # ext-redis: composer.json requires it (the phpredis pools of the shared state).
+          extensions: redis
           tools: composer:v2
 
       - name: Validate composer.json
@@ -85,6 +87,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: redis
           tools: composer:v2
       - uses: actions/cache@v6
         with:
@@ -106,6 +109,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: redis
           tools: composer:v2
       - uses: actions/cache@v6
         with:
@@ -127,6 +131,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: redis
           tools: composer:v2
       - uses: actions/cache@v6
         with:
@@ -148,6 +153,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: redis
           tools: composer:v2
       - uses: actions/cache@v6
         with:
@@ -169,6 +175,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: redis
           tools: composer:v2
       - uses: actions/cache@v6
         with:
@@ -229,6 +236,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: redis
           tools: composer:v2
       - uses: actions/cache@v6
         with:
@@ -255,6 +263,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: redis
           tools: composer:v2
       - uses: actions/cache@v6
         with:
@@ -268,6 +277,17 @@ jobs:
     name: 🧪 Tests & Coverage (PHP ${{ matrix.php-version }})
     needs: [build, mago_lint, mago_analyze, mago_guard, igor_php, secret_scan, sbom_generate, security_scan]
     runs-on: ${{ matrix.operating-system }}
+    # The pool, breaker and limiter tests run against a real Redis (atomic Lua
+    # scripts): the same image and digest as the compose stack.
+    services:
+      redis:
+        image: redis:7-alpine@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      ECOSHIELD_TEST_REDIS_DSN: 'redis://127.0.0.1:6379'
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
@@ -276,7 +296,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
-          extensions: mbstring, intl, xml, opcache
+          extensions: mbstring, intl, xml, opcache, redis
           coverage: xdebug
           tools: composer:v2
       - uses: actions/cache@v6
@@ -288,7 +308,7 @@ jobs:
         run: vendor/bin/phpunit --coverage-clover ./var/data/phpunit-coverage/clover.xml
       # Asserted in-repo rather than uploaded: this package is not onboarded to
       # Codecov, and a coverage gate that reports to nowhere enforces nothing.
-      # The house bar is 95%; the gateway currently sits at 100%.
+      # The house bar is 95%; the gateway sits above 99%.
       - name: Enforce the coverage floor
         env:
           COVERAGE_FLOOR: '95'

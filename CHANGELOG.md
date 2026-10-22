@@ -25,10 +25,29 @@ La trajectoire suit la maturité de la passerelle, pas le calendrier du framewor
 
 ## [Non publié]
 
-_Toujours construite sur `waffle-commons` **`0.1.0-beta6`** ; seule la chaîne d'outils change._
+_Cible `waffle-commons` **`0.1.0-beta7`** : `composer.json` l'exige déjà, et `composer.lock` suivra sa
+publication sur Packagist. La version `0.2.0` (alpha) sera construite et vérifiée sur ces paquets publiés._
+
+### Ajouté
+
+- **Client amont résilient** (`[NET-02]`, `[NET-03]` du framework) : le proxy passe désormais par
+  `RetryingClient(CircuitBreakerClient(Client))` de `waffle-commons/http-client`.
+  - **Délais bornés** : 1 s pour la connexion, 10 s au total par défaut, jamais infinis. Une réponse plus
+    longue à transférer que le délai total est coupée.
+  - **Reprises des seules méthodes idempotentes** (GET, HEAD, OPTIONS, PUT, DELETE), sur échec réseau ou
+    429/502/503/504, avec un recul exponentiel à gigue complète. La passerelle ne rejoue jamais un POST ni
+    un PATCH, quelle que soit la configuration : elle ignore la sémantique de l'amont, et une requête
+    rejouée peut dupliquer une commande.
+  - **Disjoncteur** dont l'état est partagé dans Redis par tous les workers et toutes les instances.
+    Circuit ouvert, la passerelle répond **503** sans appeler le monolithe ; une panne de l'amont reste un
+    **502**. Redis indisponible, le disjoncteur laisse passer, avec un avertissement dans le journal.
+  - Réglages dans `config/app.yaml`, sous `waffle.http_client.*` : les clés du squelette du framework.
 
 ### Modifié
 
+- **`ext-redis` est requis** : l'état partagé du disjoncteur passe par le pool phpredis de
+  `waffle-commons/data`. Les tests du pool et du disjoncteur tournent contre un vrai Redis
+  (`ECOSHIELD_TEST_REDIS_DSN`), et la CI démarre le sien, à la même image et au même digest que la pile.
 - **Chaîne d'outils alignée sur l'écosystème beta7** : `carthage-software/mago` `^1.50` (1.50.0) et
   `igor-php/igor-php` `^0.9.7`. La CI épingle l'auditeur igor en **0.9.7**, avec la vérification stricte
   de l'écosystème : binaire en cache supprimé, puis correspondance exacte de la ligne de version. L'ancien

@@ -48,6 +48,40 @@ waffle:
     # produit qu'il faut confronter au `max_connections` du serveur.
     pool_size: '%env(DB_POOL_SIZE)%'
 
+  # Client vers le monolithe (NET-02/03, RFC-024), avec les clés du squelette du
+  # framework. Une clé absente prend la valeur par défaut du contrat.
+  http_client:
+    # Délais de chaque transfert, jamais infinis : 1 à 30000 ms pour la
+    # connexion, 1 à 120000 ms au total — une réponse plus longue à transférer
+    # que `total_timeout_ms` est coupée. Reprises des seules méthodes
+    # idempotentes (GET, HEAD, OPTIONS, PUT, DELETE), sur échec réseau ou
+    # 429/502/503/504, avec un recul exponentiel à gigue complète plafonné à
+    # `max_delay_ms`. Aucune attente ne démarre au-delà de `budget_ms` : le pire
+    # cas vaut ce budget plus un transfert complet (RFC-024 §3.3), 25 s ici.
+    # `max_attempts: 1` coupe les reprises. La passerelle ne rejoue jamais un
+    # POST ni un PATCH : `retry_non_idempotent` n'est pas lue.
+    resilience:
+      connect_timeout_ms: 1000
+      total_timeout_ms: 10000
+      max_attempts: 3
+      base_delay_ms: 100
+      max_delay_ms: 2000
+      budget_ms: 15000
+    # Disjoncteur de l'amont, état partagé dans Redis par tous les workers et
+    # toutes les instances : il s'ouvre quand `failure_rate_percent` % des appels
+    # échouent (réseau ou 5xx) sur `window_seconds`, à partir de `minimum_calls`
+    # appels. Ouvert, la passerelle répond 503 sans appeler le monolithe ; après
+    # `cool_down_seconds`, `half_open_trials` appel(s) d'essai, et un succès le
+    # referme. Redis indisponible : il laisse passer, avec un avertissement.
+    breaker:
+      enabled: true
+      failure_rate_percent: 50
+      minimum_calls: 10
+      window_seconds: 60
+      cool_down_seconds: 30
+      half_open_trials: 1
+      redis_dsn: '%env(REDIS_DSN)%'
+
 gateway:
   # Le monolithe legacy à protéger. Fixé par l'exploitant, jamais par le client.
   upstream: '%env(UPSTREAM_URL)%'

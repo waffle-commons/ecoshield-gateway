@@ -5,14 +5,21 @@ declare(strict_types=1);
 namespace AppTests\Proxy;
 
 use App\Exception\GatewayException;
+use App\Factory\UpstreamClientFactory;
 use App\Http\HopByHopHeaders;
 use App\Proxy\ProxyController;
 use AppTests\Helper\RecordingClient;
+use AppTests\Helper\ScriptedClient;
+use AppTests\Helper\StubCircuitStorage;
+use AppTests\Helper\StubConfig;
 use AppTests\Helper\ThrowingClient;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Log\NullLogger;
+use Waffle\Commons\Contracts\CircuitBreaker\Exception\CircuitOpenExceptionInterface;
 use Waffle\Commons\Http\Factory\RequestFactory;
 use Waffle\Commons\Http\Factory\StreamFactory;
 use Waffle\Commons\Http\Factory\UriFactory;
@@ -24,7 +31,7 @@ use Waffle\Commons\Http\ServerRequest;
 #[CoversClass(GatewayException::class)]
 final class ProxyControllerTest extends TestCase
 {
-    private function makeController(RecordingClient|ThrowingClient $client): ProxyController
+    private function makeController(ClientInterface $client): ProxyController
     {
         return new ProxyController(
             client: $client,
@@ -249,6 +256,50 @@ final class ProxyControllerTest extends TestCase
             self::assertStringNotContainsString('upstream.internal', $e->getMessage());
             self::assertNotNull($e->getPrevious());
         }
+    }
+
+    public function testAnOpenCircuitBecomesServiceUnavailableWithoutCallingTheUpstream(): void
+    {
+        // The shipped decorators, with an open circuit: nothing leaves the
+        // gateway, so the answer is 503 rather than a bad gateway.
+        $transport = new ScriptedClient(new Response(statusCode: 200), failures: 0);
+        $client = UpstreamClientFactory::resilient(
+            $transport,
+            new StubConfig(),
+            new StubCircuitStorage(allow: false),
+            new NullLogger(),
+        );
+
+        try {
+            $this->makeController($client)->proxy($this->makeRequest());
+            self::fail('Expected a GatewayException.');
+        } catch (GatewayException $e) {
+            self::assertSame(503, $e->getCode());
+            self::assertStringNotContainsString('upstream.internal', $e->getMessage());
+            self::assertInstanceOf(CircuitOpenExceptionInterface::class, $e->getPrevious());
+            self::assertSame(0, $transport->calls);
+        }
+    }
+
+    public function testARetriedAttemptCarriesTheSameInboundStream(): void
+    {
+        // Retries must not copy the body either: each attempt hands the
+        // transport the very stream the client sent (Client rewinds it).
+        $transport = new ScriptedClient(new Response(statusCode: 200), failures: 1);
+        $client = UpstreamClientFactory::resilient(
+            $transport,
+            new StubConfig([
+                'waffle.http_client.resilience.base_delay_ms' => '1',
+                'waffle.http_client.resilience.max_delay_ms' => '1',
+            ]),
+            null,
+            new NullLogger(),
+        );
+        $body = new StreamFactory()->createStream('payload');
+
+        $this->makeController($client)->proxy($this->makeRequest('PUT')->withBody($body));
+
+        self::assertSame([$body, $body], $transport->bodies);
     }
 
     public function testStripsHopByHopHeadersFromTheResponse(): void

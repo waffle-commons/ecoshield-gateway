@@ -18,6 +18,8 @@
         <ini name="error_reporting" value="-1"/>
         <server name="APP_ENV" value="test" force="true"/>
         <server name="SHELL_VERBOSITY" value="-1"/>
+        <!-- Redis des tests (pool, disjoncteur, limiteur) : la CI le remplace. -->
+        <env name="ECOSHIELD_TEST_REDIS_DSN" value="redis://waffle-redis:6379"/>
     </php>
     <testsuites>
         <testsuite name="EcoShield Gateway Test Suite">

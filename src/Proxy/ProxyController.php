@@ -12,6 +12,7 @@ use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
+use Waffle\Commons\Contracts\CircuitBreaker\Exception\CircuitOpenExceptionInterface;
 
 /**
  * Streaming reverse proxy (RFC-013 — EcoShield POC, `[GATE-01]`).
@@ -37,6 +38,16 @@ use Psr\Http\Message\UriInterface;
  * The one rule that keeps it true: **never call `(string) $body`** on either
  * message. A single string cast silently converts this class from a streaming
  * proxy into a buffering one, and nothing in the type system will complain.
+ *
+ * ## Resilience
+ *
+ * The client is whatever the kernel factory injects: in the shipped
+ * configuration `RetryingClient(CircuitBreakerClient(Client))` (`[NET-02/03]`,
+ * see {@see \App\Factory\UpstreamClientFactory}), with bounded timeouts and
+ * retries for idempotent methods only. This class stays a plain PSR-18
+ * consumer. An open circuit becomes a 503, because the upstream was not called;
+ * any other client failure stays a 502. A retry sends the same inbound stream
+ * again, which `Client` rewinds first when it is seekable.
  *
  * ## Statelessness
  *
@@ -83,8 +94,8 @@ final readonly class ProxyController
     /**
      * Proxies one request upstream and returns the upstream response.
      *
-     * @throws GatewayException When the inbound message is unsafe to forward, or
-     *                          the upstream cannot be reached.
+     * @throws GatewayException When the inbound message is unsafe to forward, the
+     *                          upstream cannot be reached, or its circuit is open.
      */
     public function proxy(ServerRequestInterface $request): ResponseInterface
     {
@@ -112,6 +123,8 @@ final readonly class ProxyController
 
         try {
             $response = $this->client->sendRequest($upstreamRequest);
+        } catch (CircuitOpenExceptionInterface $refused) {
+            throw GatewayException::upstreamUnavailable($refused);
         } catch (ClientExceptionInterface $failure) {
             throw GatewayException::upstreamUnreachable($failure);
         }
