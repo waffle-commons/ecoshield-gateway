@@ -41,8 +41,12 @@ composer igor     # sûreté en mode worker
 | Porte | Exigence | Raison |
 |---|---|---|
 | `mago` | **Zéro sortie** — pas d'erreur, pas d'avertissement, pas de note | Une ligne de base rend une dette invisible ; le projet n'en tolère aucune |
-| `tests` | Suite verte, couverture **≥ 95 %** | Actuellement 99.15 % : la régression se verrait |
+| `tests` | Suite verte, couverture **≥ 95 %** | Actuellement 99.50 % : la régression se verrait |
 | `igor` | **0 KO** | Un état résiduel en mode worker est une fuite de données entre clients |
+
+Les tests du pool Redis, du disjoncteur et du limiteur parlent à un **vrai Redis** : leurs scripts
+Lua atomiques ne se simulent pas. `ECOSHIELD_TEST_REDIS_DSN` le désigne (`phpunit.xml` vise le
+service `waffle-redis` du monorepo ; la CI démarre le sien).
 
 **Correction native, jamais suppression.** Une alerte de l'analyseur se résout par un type juste ou
 une refonte — pas par une annotation d'exclusion, un `mixed` ou une ligne de base. La seule exception
@@ -79,6 +83,26 @@ disposer d'un chemin de référence.
 docker compose -f docker-compose.yml -f docker-compose.bench.yml up -d --build
 ./bench/ladder.sh
 ```
+
+### Construire sur une version non publiée du framework (mainteneurs)
+
+La passerelle consomme les versions **publiées** de `waffle-commons`. Entre deux publications — la
+`0.2.0` sur `0.1.0-beta7` avant sa sortie, par exemple — `bin/framework-local.sh` installe le
+framework depuis le monorepo qui héberge ce dépôt (`contributions/ecoshield-gateway/`), sans rien
+versionner : copies propres des composants dans `var/framework-local/`, `composer.local.json` et
+`composer.local.lock` exclus par `.git/info/exclude`, Composer exécuté dans le conteneur
+`waffle-dev`.
+
+```bash
+VERSION=0.1.0-beta7 bin/framework-local.sh install   # une fois
+bin/framework-local.sh resync                        # après un changement dans le framework
+```
+
+Une fois la version publiée : supprimer `composer.local.*` et `var/framework-local/`, puis
+`composer update 'waffle-commons/*'`, et repasser les portes sur les paquets de Packagist. Tant que
+ce n'est pas fait, l'image de production — qui installe depuis `composer.lock` — ne se construit pas
+sur la nouvelle version : le laboratoire tourne alors avec la surcharge de développement
+(`-f docker-compose.dev.yml` en dernier).
 
 ---
 

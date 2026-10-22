@@ -62,9 +62,19 @@ publication sur Packagist. La version `0.2.0` (alpha) sera construite et vérifi
   chaque exécution (`create-project`, `composer require` sans contrainte, recettes Flex lues sur le
   réseau, installeur Composer exécuté sans vérification de signature). C'est le monolithe que la campagne
   0.1.1 a mesuré (Symfony 5.4.45, doctrine/dbal 4.4.4) ; les stubs, désormais redondants, disparaissent.
+- **`bin/framework-local.sh`** : construire la passerelle sur une version non publiée de
+  `waffle-commons`, depuis le monorepo, sans rien versionner (procédure dans `CONTRIBUTING.md`). C'est
+  ainsi que l'alpha a été construite et vérifiée sur `0.1.0-beta7` avant sa publication.
 
 ### Modifié
 
+- **Documentation de l'alpha.**
+  - README : architecture, laboratoire, routes, configuration, état du projet.
+  - `SECURITY.md` : limiteur, résilience amont, panne de Redis, cadrage des messages.
+  - `BENCHMARK_RESULTS.md` : une note de portée en tête dit que ses chiffres sont ceux de la `0.1.1`.
+  - Le README ne prétend plus que la passerelle n'importe que des interfaces PSR : c'était faux depuis
+    la `0.1.0`, ses fabriques assemblent des classes publiées du framework. Ce qui tient, et qu'il dit
+    désormais, c'est qu'elle ne passe que par la surface publique.
 - **Sonde du pool espacée** (`[CARRY-01]` du framework) : une connexion qui a fait ses preuves depuis
   moins de 500 ms est prêtée sans `SELECT 1`, soit un aller-retour de moins par lecture reprise
   (`DB_PING_FRESHNESS_MS` ; 0 rétablit la sonde à chaque emprunt).
