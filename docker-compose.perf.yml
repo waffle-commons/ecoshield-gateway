@@ -98,7 +98,7 @@ services:
   # que la campagne cherche à mesurer. Même choix que `bench-postgres` côté
   # écosystème.
   bench-postgres:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
     container_name: ecoshield-postgres
     cpus: 2
     mem_limit: 1g

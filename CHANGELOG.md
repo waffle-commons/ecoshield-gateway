@@ -36,6 +36,15 @@ _Toujours construite sur `waffle-commons` **`0.1.0-beta6`** ; seule la chaîne d
 - **Actions GitHub alignées sur le modèle de composant** : `actions/checkout` v7, `actions/cache` v6, et
   TruffleHog épinglé en `v3.97.9` au lieu de suivre `main`.
 
+### Sécurité
+
+- **FrankenPHP 1.13.2 sur PHP 8.5.12**, au lieu de FrankenPHP 1.12.2 : ce sont les publications de
+  sécurité du 2026-10-21 contre PHP2Shell (CVE-2026-109618 et CVE-2026-109619).
+- **Toutes les images sont épinglées par digest** : FrankenPHP, Composer (`composer:latest` jusqu'ici),
+  Nginx, PHP-FPM 8.3 (le stand-in comme le monolithe Symfony), Redis et PostgreSQL. Une étiquette bouge,
+  un digest non : deux constructions de la même révision donnent désormais la même image. Redis et
+  PostgreSQL reprennent les digests de l'écosystème `waffle-commons`.
+
 ### Corrigé
 
 Deux constats du passage à igor 0.9.7 :
