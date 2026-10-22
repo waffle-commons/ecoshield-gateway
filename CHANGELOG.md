@@ -84,6 +84,14 @@ publication sur Packagist. La version `0.2.0` (alpha) sera construite et vérifi
 
 ### Corrigé
 
+- **Une panne de Redis ne fait plus tomber la passerelle.** Le Shield laissait remonter l'indisponibilité
+  de son stockage : Redis arrêté, toute route mise en cache répondait 500, et chaque requête était
+  journalisée en `critical`. Le cache est une optimisation, l'amont reste la source : une lecture devient
+  un miss, une écriture n'a pas lieu (`X-EcoShield-Cache: BYPASS`), avec un avertissement. Vérifié dans le
+  laboratoire : Redis arrêté, toutes les routes répondent 200, et le limiteur comme le disjoncteur
+  laissent passer en le journalisant. Au retour de Redis, le cache reprend (MISS puis HIT) sans redémarrer
+  la passerelle.
+
 Deux constats du passage à igor 0.9.7 :
 
 - Le contrôleur frontal lit `MAX_REQUESTS` dans le registre d'environnement (processus > `.env`), comme

@@ -8,7 +8,10 @@ use IgorPhp\IgorBundle\Attribute\WorkerSafe;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Waffle\Commons\Contracts\Cache\CacheInterface;
+use Waffle\Commons\Contracts\Cache\Exception\CacheBackendUnavailableExceptionInterface;
 
 /**
  * Le « Shield » : cache des réponses du monolithe legacy (pilier 3).
@@ -37,6 +40,13 @@ use Waffle\Commons\Contracts\Cache\CacheInterface;
  * mettrait tout en cache échangerait sa garantie mémoire contre un taux de hit,
  * et perdrait la seule chose que ce POC cherche à démontrer.
  *
+ * ## Un cache indisponible n'est pas une panne
+ *
+ * Le Shield est une optimisation : l'amont reste la source. Si son stockage
+ * (Redis) ne répond plus, une lecture est un miss et une écriture n'a pas lieu,
+ * avec un avertissement dans le journal — jamais une erreur 500. Le limiteur et
+ * le disjoncteur font de même avec leur propre stockage.
+ *
  * `final readonly`, sans état d'instance : sûre dans la boucle worker.
  */
 final readonly class ResponseCache
@@ -62,6 +72,7 @@ final readonly class ResponseCache
         private StreamFactoryInterface $streams,
         private int $ttlSeconds = 30,
         private int $maxBodyBytes = 262_144,
+        private LoggerInterface $logger = new NullLogger(),
     ) {}
 
     /**
@@ -78,7 +89,16 @@ final readonly class ResponseCache
         // sans variable intermédiaire — une entrée mal formée (format changé,
         // backend partagé avec un autre service) doit se solder par un miss, pas
         // par une réponse à moitié reconstruite.
-        $entry = $this->cache->get($this->key($request));
+        try {
+            $entry = $this->cache->get($this->key($request));
+        } catch (CacheBackendUnavailableExceptionInterface $unavailable) {
+            $this->logger->warning('Shield cache backend unavailable; the request bypasses the cache.', [
+                'exception' => $unavailable,
+            ]);
+
+            return null;
+        }
+
         if (
             !is_array($entry)
             || !is_int($entry['status'] ?? null)
@@ -138,19 +158,29 @@ final readonly class ResponseCache
         }
         $body = $stream->getContents();
 
-        $this->cache->set(
-            $this->key($request),
-            [
-                'status' => $response->getStatusCode(),
-                'headers' => $response->getHeaders(),
-                'body' => $body,
-            ],
-            $this->ttlSeconds,
-        );
+        // Le corps vient d'être consommé : la réponse rendue porte un flux neuf
+        // dans tous les cas, sinon l'appelant émettrait une réponse vide.
+        $replayable = $response->withBody($this->streams->createStream($body));
 
-        // Le corps vient d'être consommé : on rend une réponse portant un flux
-        // neuf, sinon l'appelant émettrait une réponse vide.
-        return $response->withBody($this->streams->createStream($body))->withHeader('X-EcoShield-Cache', 'MISS');
+        try {
+            $this->cache->set(
+                $this->key($request),
+                [
+                    'status' => $response->getStatusCode(),
+                    'headers' => $response->getHeaders(),
+                    'body' => $body,
+                ],
+                $this->ttlSeconds,
+            );
+        } catch (CacheBackendUnavailableExceptionInterface $unavailable) {
+            $this->logger->warning('Shield cache backend unavailable; the response is not stored.', [
+                'exception' => $unavailable,
+            ]);
+
+            return $replayable->withHeader('X-EcoShield-Cache', 'BYPASS');
+        }
+
+        return $replayable->withHeader('X-EcoShield-Cache', 'MISS');
     }
 
     private function isCacheable(ServerRequestInterface $request): bool

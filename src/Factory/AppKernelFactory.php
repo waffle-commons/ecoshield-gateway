@@ -114,6 +114,7 @@ final class AppKernelFactory
                 streams: $streamFactory,
                 ttlSeconds: $config->getInt('gateway.shield.ttl') ?? self::DEFAULT_CACHE_TTL,
                 maxBodyBytes: $config->getInt('gateway.shield.max_body_bytes') ?? self::DEFAULT_MAX_CACHED_BODY,
+                logger: $logger,
             ),
         );
 
