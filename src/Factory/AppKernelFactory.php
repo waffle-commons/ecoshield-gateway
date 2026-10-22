@@ -44,8 +44,8 @@ use Waffle\Commons\Security\Security;
  *
  * Volontairement plus courte que la fabrique du squelette : une passerelle n'a
  * ni sessions, ni CSRF, ni pont d'authentification. Ce qu'elle a — un client
- * amont résilient, un cache, le pool des routes reprises, un routeur, un
- * pipeline — est ici, et rien d'autre. Chaque service câblé correspond à une
+ * amont résilient, un limiteur de débit, un cache, le pool des routes reprises,
+ * un routeur, un pipeline — est ici, et rien d'autre. Chaque service câblé correspond à une
  * phrase du README.
  */
 final class AppKernelFactory
@@ -144,6 +144,15 @@ final class AppKernelFactory
         $trustedHosts = array_values(array_filter($config->getArray('waffle.trusted_hosts') ?? [], is_string(...)));
         if ($trustedHosts !== []) {
             $stack->add(middleware: new TrustedHostMiddleware($trustedHosts));
+        }
+
+        // Limitation de débit de TOUT le trafic (NET-01) : après le contrôle
+        // d'hôte, pour qu'un Host forgé ne consomme aucun jeton, et avant le
+        // routage — un client au-delà de son quota n'atteint ni le Shield, ni la
+        // base, ni le monolithe. Voir RateLimitFactory.
+        $rateLimit = RateLimitFactory::middleware($config, $securityContext, $responseFactory, $logger);
+        if ($rateLimit !== null) {
+            $stack->add(middleware: $rateLimit);
         }
 
         $controllersPath = $config->getString('waffle.paths.controllers') ?? throw new RuntimeException(

@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace AppTests\Controller;
 
 use App\Controller\RescueController;
+use App\Shield\ResponseCache;
 use AppTests\Helper\StubConfig;
 use AppTests\Helper\StubConnectionPool;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
+use Waffle\Commons\Cache\Adapter\ArrayCache;
 use Waffle\Commons\Http\Factory\ResponseFactory;
+use Waffle\Commons\Http\Factory\ServerRequestFactory;
+use Waffle\Commons\Http\Factory\StreamFactory;
 
 /**
  * Pilier 1 : les routes reprises se servent sans jamais toucher au legacy.
@@ -24,6 +29,27 @@ final class RescueControllerTest extends TestCase
         $controller->setResponseFactory(new ResponseFactory());
 
         return $controller;
+    }
+
+    /**
+     * La route de lecture reprise, telle que le répartiteur l'appelle : la
+     * requête, le pool, le Shield et la configuration (Shield actif par défaut).
+     *
+     * @param array<string, string> $config
+     */
+    private function user(
+        string $id,
+        StubConnectionPool $pool,
+        ResponseCache $shield = new ResponseCache(new ArrayCache(), new StreamFactory()),
+        array $config = [],
+    ): ResponseInterface {
+        return $this->controller()->user(
+            $id,
+            new ServerRequestFactory()->createServerRequest('GET', 'http://localhost/api/users/' . $id),
+            $pool,
+            $shield,
+            new StubConfig($config),
+        );
     }
 
     #[Test]
@@ -61,7 +87,7 @@ final class RescueControllerTest extends TestCase
             ['id' => 'abc-123', 'email' => 'user1@bench.ecoshield.local'],
         ]);
 
-        $response = $this->controller()->user('abc-123', $pool);
+        $response = $this->user('abc-123', $pool);
 
         self::assertSame(200, $response->getStatusCode());
 
@@ -79,7 +105,7 @@ final class RescueControllerTest extends TestCase
         // Délibéré, et c'est une contrainte de MESURE : le banc compare des
         // percentiles de latence, et deux statuts différents mélangeraient deux
         // distributions sous un même chiffre.
-        $response = $this->controller()->user('inconnu', new StubConnectionPool());
+        $response = $this->user('inconnu', new StubConnectionPool());
 
         self::assertSame(200, $response->getStatusCode());
 
@@ -96,7 +122,7 @@ final class RescueControllerTest extends TestCase
         // proxyfier et de servir son cache : seule CETTE route est privée de sa
         // source. C'est ce qui permet à la démonstration par défaut de tourner
         // sans PostgreSQL.
-        $response = $this->controller()->user('abc-123', new StubConnectionPool(unreachable: true));
+        $response = $this->user('abc-123', new StubConnectionPool(unreachable: true));
 
         self::assertSame(503, $response->getStatusCode());
 
@@ -105,6 +131,72 @@ final class RescueControllerTest extends TestCase
         // Aucune trace, aucun DSN, aucun message du pilote : un 503 qui raconte
         // la topologie interne est une fuite d'information.
         self::assertStringNotContainsString('no healthy connection', $body);
+    }
+
+    #[Test]
+    public function the_shield_answers_a_repeated_read_without_the_database(): void
+    {
+        $shield = new ResponseCache(new ArrayCache(), new StreamFactory());
+        $first = $this->user(
+            'abc-123',
+            new StubConnectionPool([
+                ['id' => 'abc-123', 'email' => 'user1@bench.ecoshield.local'],
+            ]),
+            $shield,
+        );
+        self::assertSame('MISS', $first->getHeaderLine('X-EcoShield-Cache'));
+
+        // Base désormais injoignable : seul le Shield peut encore répondre 200.
+        $second = $this->user('abc-123', new StubConnectionPool(unreachable: true), $shield);
+
+        self::assertSame(200, $second->getStatusCode());
+        self::assertSame('HIT', $second->getHeaderLine('X-EcoShield-Cache'));
+        self::assertStringContainsString('user1@bench.ecoshield.local', (string) $second->getBody());
+    }
+
+    #[Test]
+    public function a_database_outage_is_never_cached(): void
+    {
+        // Un 503 n'est pas une représentation : le mettre en cache prolongerait
+        // la panne au-delà du retour de la base.
+        $shield = new ResponseCache(new ArrayCache(), new StreamFactory());
+        self::assertSame(
+            503,
+            $this->user('abc-123', new StubConnectionPool(unreachable: true), $shield)->getStatusCode(),
+        );
+
+        $recovered = $this->user(
+            'abc-123',
+            new StubConnectionPool([
+                ['id' => 'abc-123', 'email' => 'user1@bench.ecoshield.local'],
+            ]),
+            $shield,
+        );
+
+        self::assertSame(200, $recovered->getStatusCode());
+        self::assertSame('MISS', $recovered->getHeaderLine('X-EcoShield-Cache'));
+    }
+
+    #[Test]
+    public function with_the_rescue_cache_off_every_read_goes_to_the_database(): void
+    {
+        // La configuration du banc : la lecture comparée doit rester la même
+        // requête des deux côtés, jamais un hit contre une requête en base.
+        $shield = new ResponseCache(new ArrayCache(), new StreamFactory());
+        $off = ['gateway.rescue.cache' => 'false'];
+        $first = $this->user(
+            'abc-123',
+            new StubConnectionPool([
+                ['id' => 'abc-123', 'email' => 'user1@bench.ecoshield.local'],
+            ]),
+            $shield,
+            $off,
+        );
+        self::assertFalse($first->hasHeader('X-EcoShield-Cache'));
+
+        $second = $this->user('abc-123', new StubConnectionPool(unreachable: true), $shield, $off);
+
+        self::assertSame(503, $second->getStatusCode());
     }
 
     #[Test]

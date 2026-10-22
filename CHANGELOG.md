@@ -42,11 +42,29 @@ publication sur Packagist. La version `0.2.0` (alpha) sera construite et vérifi
     Circuit ouvert, la passerelle répond **503** sans appeler le monolithe ; une panne de l'amont reste un
     **502**. Redis indisponible, le disjoncteur laisse passer, avec un avertissement dans le journal.
   - Réglages dans `config/app.yaml`, sous `waffle.http_client.*` : les clés du squelette du framework.
+- **Limitation de débit de tout le trafic** (`[NET-01]`) : un seau à jetons par IP cliente, partagé dans
+  Redis. Par défaut 600 requêtes par minute, rafales comprises ; au-delà, **429** avec `Retry-After` et
+  les en-têtes `RateLimit-*`.
+  - Le limiteur se place après le contrôle d'hôte, si bien qu'un `Host` forgé ne consomme aucun jeton, et
+    avant le routage : un client au-delà de son quota n'atteint ni le Shield, ni la base, ni le monolithe.
+  - L'adresse n'est lue dans `X-Forwarded-For` que derrière les proxys de `TRUSTED_PROXIES`. Un en-tête
+    forgé par le client n'ouvre pas de nouveau seau.
+  - Redis indisponible, le trafic passe (`on_storage_failure: open`), avec un avertissement dans le journal.
+- **Le Shield sert aussi la route reprise** `/api/users/{id}` (`gateway.rescue.cache`) : un hit ne touche
+  pas la base, et une réponse 503 (base indisponible) n'est jamais mise en cache.
 
 ### Modifié
 
-- **`ext-redis` est requis** : l'état partagé du disjoncteur passe par le pool phpredis de
-  `waffle-commons/data`. Les tests du pool et du disjoncteur tournent contre un vrai Redis
+- **Sonde du pool espacée** (`[CARRY-01]` du framework) : une connexion qui a fait ses preuves depuis
+  moins de 500 ms est prêtée sans `SELECT 1`, soit un aller-retour de moins par lecture reprise
+  (`DB_PING_FRESHNESS_MS` ; 0 rétablit la sonde à chaque emprunt).
+- **Banc : `APP_ENV=bench` charge `config/app_bench.yaml`**, qui ne coupe que ce qui fausserait une mesure.
+  Le limiteur est coupé, parce que k6 tire depuis une seule adresse. Le Shield de la route reprise l'est
+  aussi, pour que la lecture comparée reste la même requête des deux côtés. `MAX_REQUESTS` passe à
+  10 000 000 : la campagne 0.1.1 contenait un recyclage de worker.
+
+- **`ext-redis` est requis** : l'état partagé du disjoncteur et du limiteur passe par le pool phpredis de
+  `waffle-commons/data`. Les tests du pool, du disjoncteur et du limiteur tournent contre un vrai Redis
   (`ECOSHIELD_TEST_REDIS_DSN`), et la CI démarre le sien, à la même image et au même digest que la pile.
 - **Chaîne d'outils alignée sur l'écosystème beta7** : `carthage-software/mago` `^1.50` (1.50.0) et
   `igor-php/igor-php` `^0.9.7`. La CI épingle l'auditeur igor en **0.9.7**, avec la vérification stricte

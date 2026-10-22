@@ -18,6 +18,19 @@ waffle:
   # Les contrôleurs déclarent #[PublicAccess] explicitement.
   security:
     level: 1
+    # Limitation de débit de TOUT le trafic, routes reprises comme proxyfiées
+    # (NET-01, RFC-017 §3.1) : un seau à jetons par IP cliente, partagé dans
+    # Redis. `capacity` requêtes par `period_seconds`, rafales comprises ; au-delà,
+    # 429 avec Retry-After. Le défaut est large parce qu'une page et ses
+    # ressources font des dizaines de requêtes, et qu'un NAT d'entreprise partage
+    # une adresse. `on_storage_failure` : open (laisse passer, journalisé) ou
+    # closed (503). L'IP est lue derrière les proxys de `gateway.trusted_proxies`.
+    rate_limit:
+      enabled: true
+      capacity: 600
+      period_seconds: 60
+      on_storage_failure: 'open'
+      redis_dsn: '%env(REDIS_DSN)%'
 
   paths:
     controllers: 'src/Controller'
@@ -47,6 +60,10 @@ waffle:
     # pool. Le total ouvert vaut donc WORKER_COUNT x pool_size, et c'est ce
     # produit qu'il faut confronter au `max_connections` du serveur.
     pool_size: '%env(DB_POOL_SIZE)%'
+    # Une connexion qui a fait ses preuves depuis moins de tant de millisecondes
+    # est prêtée sans sonde `SELECT 1` (CARRY-01 du framework) : un aller-retour
+    # de moins par lecture. 0 sonde à chaque emprunt ; absente : 500.
+    ping_freshness_ms: '%env(DB_PING_FRESHNESS_MS)%'
 
   # Client vers le monolithe (NET-02/03, RFC-024), avec les clés du squelette du
   # framework. Une clé absente prend la valeur par défaut du contrat.
@@ -90,6 +107,17 @@ gateway:
   # l'empreinte mémoire d'une passerelle exposée renseigne un attaquant sur
   # l'effet de ses requêtes. Seul le banc (docker-compose.perf.yml) l'ouvre.
   diagnostics: '%env(ECOSHIELD_DIAGNOSTICS)%'
+
+  # Proxys de confiance DEVANT la passerelle (adresses ou plages CIDR, séparées
+  # par des virgules) : le limiteur ne lit X-Forwarded-For que s'il vient d'eux.
+  # Vide, c'est l'adresse de la connexion qui compte — derrière un répartiteur de
+  # charge non déclaré ici, tous les clients partageraient un seul seau.
+  trusted_proxies: '%env(TRUSTED_PROXIES)%'
+
+  rescue:
+    # Le Shield sert aussi les routes reprises (`/api/users/{id}`) : un hit ne
+    # touche pas la base. Le banc le coupe (app_bench.yaml).
+    cache: true
 
   shield:
     # Durée de vie d'une réponse mise en cache, en secondes.

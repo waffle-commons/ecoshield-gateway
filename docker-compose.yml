@@ -27,7 +27,13 @@ services:
       # changer : la passerelle ne reprend du message entrant que chemin + query.
       UPSTREAM_URL: 'http://legacy-nginx:80'
       CACHE_ADAPTER: 'redis'
+      # Redis porte le Shield, le circuit du disjoncteur et les seaux du limiteur.
       REDIS_DSN: 'redis://redis:6379'
+      # Proxys de confiance DEVANT la passerelle (répartiteur de charge, CDN) :
+      # adresses ou CIDR séparés par des virgules. Vide ici, parce que la
+      # passerelle publie elle-même son port ; derrière un répartiteur, le
+      # renseigner, sinon tous les clients partagent le seau du limiteur.
+      TRUSTED_PROXIES: '${TRUSTED_PROXIES:-}'
       # Nombre de requêtes servies avant recyclage du worker. Le laisser élevé
       # est le point : un worker qui se recycle rarement est un worker dont le
       # framework reste chaud.

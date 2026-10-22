@@ -71,4 +71,33 @@ final class ConnectionPoolFactoryTest extends TestCase
             'waffle.database.pool_size' => '4',
         ])));
     }
+
+    #[Test]
+    public function the_ping_freshness_window_defaults_to_500_ms(): void
+    {
+        // CARRY-01 du framework : la valeur du squelette. Une valeur fautive ne
+        // doit ni empêcher le boot, ni désactiver la sonde par accident.
+        foreach (['', 'demi-seconde', '-1'] as $bad) {
+            self::assertSame(
+                500,
+                ConnectionPoolFactory::resolvePingFreshness(new StubConfig([
+                    'waffle.database.ping_freshness_ms' => $bad,
+                ])),
+                sprintf('la valeur "%s" doit retomber sur le défaut', $bad),
+            );
+        }
+
+        self::assertSame(500, ConnectionPoolFactory::resolvePingFreshness(new StubConfig()));
+    }
+
+    #[Test]
+    public function zero_restores_the_probe_on_every_lease(): void
+    {
+        self::assertSame(0, ConnectionPoolFactory::resolvePingFreshness(new StubConfig([
+            'waffle.database.ping_freshness_ms' => '0',
+        ])));
+        self::assertSame(250, ConnectionPoolFactory::resolvePingFreshness(new StubConfig([
+            'waffle.database.ping_freshness_ms' => '250',
+        ])));
+    }
 }

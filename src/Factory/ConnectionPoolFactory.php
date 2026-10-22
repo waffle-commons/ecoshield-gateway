@@ -37,6 +37,9 @@ final class ConnectionPoolFactory
     /** Plafond par défaut, aligné sur celui de PDOConnectionPool. */
     private const int DEFAULT_POOL_SIZE = 8;
 
+    /** Fenêtre de fraîcheur par défaut de la sonde, en millisecondes (squelette : 500). */
+    private const int DEFAULT_PING_FRESHNESS_MS = 500;
+
     public static function create(ConfigInterface $config): PDOConnectionPool
     {
         $driver = $config->getString('waffle.database.driver') ?? 'pgsql';
@@ -53,7 +56,7 @@ final class ConnectionPoolFactory
         // socket n'est ouverte et une configuration absente reste sans effet.
         return new PDOConnectionPool(factory: static fn(): PDO => new PDO($dsn, $username, $password, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        ]), maxConnections: self::resolvePoolSize($config), pingQuery: 'SELECT 1');
+        ]), maxConnections: self::resolvePoolSize($config), pingQuery: 'SELECT 1', pingFreshnessMs: self::resolvePingFreshness($config));
     }
 
     /**
@@ -65,13 +68,35 @@ final class ConnectionPoolFactory
      */
     public static function resolvePoolSize(ConfigInterface $config): int
     {
-        $raw = $config->getString('waffle.database.pool_size');
+        return self::resolveInt($config, 'waffle.database.pool_size', 1, self::DEFAULT_POOL_SIZE);
+    }
+
+    /**
+     * Fenêtre de fraîcheur de la sonde, en millisecondes (`[CARRY-01]` du
+     * framework, `DB_PING_FRESHNESS_MS`) : une connexion qui a fait ses preuves
+     * depuis moins longtemps est prêtée sans `SELECT 1`, ce qui retire un aller-
+     * retour à la base par lecture reprise. 0 rétablit la sonde à chaque emprunt.
+     * Absente, vide ou invalide : 500, comme le squelette du framework.
+     */
+    public static function resolvePingFreshness(ConfigInterface $config): int
+    {
+        return self::resolveInt($config, 'waffle.database.ping_freshness_ms', 0, self::DEFAULT_PING_FRESHNESS_MS);
+    }
+
+    /**
+     * Un entier de configuration interpolé depuis l'environnement, donc une
+     * chaîne. Absent, vide, non entier ou sous le minimum : le défaut — une
+     * valeur fautive n'empêche jamais le boot.
+     */
+    private static function resolveInt(ConfigInterface $config, string $key, int $minimum, int $default): int
+    {
+        $raw = $config->getString($key);
         if ($raw === null || $raw === '') {
-            return self::DEFAULT_POOL_SIZE;
+            return $default;
         }
 
-        $size = filter_var($raw, FILTER_VALIDATE_INT);
+        $value = filter_var($raw, FILTER_VALIDATE_INT);
 
-        return is_int($size) && $size >= 1 ? $size : self::DEFAULT_POOL_SIZE;
+        return is_int($value) && $value >= $minimum ? $value : $default;
     }
 }
