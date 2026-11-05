@@ -193,7 +193,7 @@ jobs:
       # ecosystem (`.igor-version` in the umbrella).
       - name: Pin the Igor auditor
         env:
-          IGOR_VERSION: '0.9.7'
+          IGOR_VERSION: '0.10.1'
         run: |
           bin_dir=vendor/igor-php/igor-php/resources/bin
           rm -rf "$bin_dir" && mkdir -p "$bin_dir"
@@ -219,7 +219,7 @@ jobs:
       # both refs, and `github.head_ref` is empty on a push, which silently scans
       # nothing on exactly the events that matter for a release tag.
       - name: TruffleHog OSS
-        uses: trufflesecurity/trufflehog@v3.97.9
+        uses: trufflesecurity/trufflehog@v3.99.7
         with:
           path: ./
           extra_args: --only-verified

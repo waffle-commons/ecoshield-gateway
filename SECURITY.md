@@ -137,7 +137,7 @@ dont le rôle est de servir.
 Le mode worker garde les services en mémoire d'une requête à l'autre : un état résiduel devient une
 fuite de données entre clients. L'audit `igor-php` vérifie cette propriété et **bloque la
 publication à la moindre alerte** : actuellement **15 fichiers de services audités, 15 sans état,
-0 KO, 0 avertissement** (igor 0.9.7).
+0 KO, 0 avertissement** (igor 0.10.1).
 
 ### Erreurs sans divulgation
 
@@ -199,7 +199,7 @@ réseau interne.
 |---|---|
 | Analyse statique (Mago : lint, analyse, périmètre) | 0 diagnostic, aucune ligne de base tolérée |
 | Tests | 85 tests, **99.50 %** de couverture des lignes ; ceux du pool, du disjoncteur et du limiteur contre un vrai Redis |
-| Sûreté en mode worker (`igor-php` 0.9.7) | **0 KO** sur 15 fichiers · 15 sans état · 0 avertissement |
+| Sûreté en mode worker (`igor-php` 0.10.1) | **0 KO** sur 15 fichiers · 15 sans état · 0 avertissement |
 | Périmètre (k6 + socket brute) | **280/280** assertions sur l'alpha, aucun désync (laboratoire, 2026-10-22) |
 | Audit des dépendances (`composer audit`) | intégré à la CI |
 | Recherche de secrets (TruffleHog) | intégrée à la CI |
