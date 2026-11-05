@@ -27,7 +27,9 @@ $kernel = AppKernelFactory::create(env: $env, debug: $debug);
 // La boucle worker : le kernel reste en mémoire, seule la requête change.
 // C'est toute la thèse FinOps du projet — le coût de démarrage est payé une
 // fois par worker, pas une fois par requête comme sous PHP-FPM.
-$maxRequests = (int) ($_SERVER['MAX_REQUESTS'] ?? 500);
+// MAX_REQUESTS : lu dans le registre d'environnement (processus > .env), comme
+// APP_ENV, jamais dans une superglobale depuis le contrôleur frontal.
+$maxRequests = (int) ($envRegistry['MAX_REQUESTS'] ?? 500);
 
 new WaffleRuntime(new GlobalsFactory(uploadBaseDir: APP_ROOT . '/var/uploads'), new ResponseEmitter())
     ->loop(kernel: $kernel, maxRequests: $maxRequests);

@@ -47,12 +47,14 @@ jobs:
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          # ext-redis: composer.json requires it (the phpredis pools of the shared state).
+          extensions: redis
           tools: composer:v2
 
       - name: Validate composer.json
@@ -63,7 +65,7 @@ jobs:
         run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       - name: Cache Composer dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -81,12 +83,13 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: redis
           tools: composer:v2
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -102,12 +105,13 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: redis
           tools: composer:v2
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -123,12 +127,13 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: redis
           tools: composer:v2
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -144,12 +149,13 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: redis
           tools: composer:v2
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -165,12 +171,13 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: redis
           tools: composer:v2
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -178,16 +185,20 @@ jobs:
       # `vendor/bin/igor-php` is a bootstrapper, not the auditor: it asks the
       # GitHub API for releases/latest and downloads THAT binary, so the composer
       # constraint and composer.lock pin nothing, and it never re-downloads once
-      # a binary exists. Seed the version file it reads, then assert the pin took
-      # — a pin that fails open is worse than no pin, because the gate would go
-      # on reporting green while auditing with a tool nobody chose.
+      # a binary exists. Drop any binary a cache or an earlier run left behind,
+      # seed the version file it reads, then assert against the BINARY's own
+      # banner: `--version` prints to stderr, and the bootstrapper's download
+      # message also contains the version, so only an exact-line match on the
+      # merged stream proves the pin took. Same pin as the waffle-commons
+      # ecosystem (`.igor-version` in the umbrella).
       - name: Pin the Igor auditor
         env:
-          IGOR_VERSION: '0.7.0'
+          IGOR_VERSION: '0.10.1'
         run: |
-          mkdir -p vendor/igor-php/igor-php/resources/bin
-          printf '%s' "$IGOR_VERSION" > vendor/igor-php/igor-php/resources/bin/.version
-          vendor/bin/igor-php --version 2>&1 | grep -qF "$IGOR_VERSION"
+          bin_dir=vendor/igor-php/igor-php/resources/bin
+          rm -rf "$bin_dir" && mkdir -p "$bin_dir"
+          printf '%s' "$IGOR_VERSION" > "$bin_dir/.version"
+          vendor/bin/igor-php --version 2>&1 | tee /dev/stderr | grep -qFx "igor-php version $IGOR_VERSION"
 
       - name: Run Igor PHP
         run: vendor/bin/igor-php .
@@ -201,14 +212,14 @@ jobs:
       matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       # Whole-filesystem scan rather than a base..head diff: the diff form needs
       # both refs, and `github.head_ref` is empty on a push, which silently scans
       # nothing on exactly the events that matter for a release tag.
       - name: TruffleHog OSS
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@v3.99.7
         with:
           path: ./
           extra_args: --only-verified
@@ -221,12 +232,13 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: redis
           tools: composer:v2
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -247,12 +259,13 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
+          extensions: redis
           tools: composer:v2
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -264,18 +277,29 @@ jobs:
     name: 🧪 Tests & Coverage (PHP ${{ matrix.php-version }})
     needs: [build, mago_lint, mago_analyze, mago_guard, igor_php, secret_scan, sbom_generate, security_scan]
     runs-on: ${{ matrix.operating-system }}
+    # The pool, breaker and limiter tests run against a real Redis (atomic Lua
+    # scripts): the same image and digest as the compose stack.
+    services:
+      redis:
+        image: redis:7-alpine@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      ECOSHIELD_TEST_REDIS_DSN: 'redis://127.0.0.1:6379'
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
-          extensions: mbstring, intl, xml, opcache
+          extensions: mbstring, intl, xml, opcache, redis
           coverage: xdebug
           tools: composer:v2
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -284,7 +308,7 @@ jobs:
         run: vendor/bin/phpunit --coverage-clover ./var/data/phpunit-coverage/clover.xml
       # Asserted in-repo rather than uploaded: this package is not onboarded to
       # Codecov, and a coverage gate that reports to nowhere enforces nothing.
-      # The house bar is 95%; the gateway currently sits at 100%.
+      # The house bar is 95%; the gateway sits above 99%.
       - name: Enforce the coverage floor
         env:
           COVERAGE_FLOOR: '95'

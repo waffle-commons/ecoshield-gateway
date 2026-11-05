@@ -41,6 +41,8 @@ permit = [
     "@layer:core",
     "@layer:psr",
     "@layer:waffle",
+    # #[WorkerSafe] marks an audited, intentional exception to the igor gate.
+    "IgorPhp\\IgorBundle\\Attribute\\**",
 ]
 
 [[guard.perimeter.rules]]

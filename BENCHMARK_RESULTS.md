@@ -19,6 +19,18 @@ d'attente de la VM. Ce que l'on ne gagne pas : un chiffre de capacité maximale,
 qui reste hors de portée de ce banc et le restera tant que le générateur
 partagera le silicium de son sujet.
 
+> **Portée de ces chiffres face à la `0.2.0` (note d'octobre 2026).** Ils décrivent la `0.1.1` :
+> ni limiteur de débit, ni reprises, ni disjoncteur, ni Shield sur la route reprise. Le banc garde
+> cette configuration pour que la méthode reste rejouable : `docker-compose.perf.yml` charge
+> `config/app_bench.yaml` (`APP_ENV=bench`), qui coupe le limiteur — k6 tire depuis une seule
+> adresse — et le Shield de la route reprise ; le disjoncteur, lui, fait partie du chemin livré.
+> Deux faits établis depuis pèsent sur le chemin **proxyfié** mesuré ici : chaque GET relayé
+> partait avec un corps vide en `chunked` et une poignée de main `Expect: 100-continue`, et une
+> requête dont le corps portait un `Content-Length` (POST, PUT, PATCH ordinaires) recevait 400 de
+> nginx. Les deux sont corrigés en
+> `0.2.0` ; aucun chiffre de cette page n'est remesuré pour autant. La campagne de la `0.3.0` les
+> remplacera, et mesurera aussi la configuration de production.
+
 ---
 
 ## 1. Verdict

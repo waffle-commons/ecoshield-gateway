@@ -21,8 +21,10 @@ use Waffle\Commons\Http\Factory\ServerRequestFactory;
  * mal ordonné — exactement le genre de panne qu'un contrôleur testé en direct ne
  * verra jamais, puisqu'il court-circuite le pipeline.
  *
- * Aucun réseau n'est touché : seules les routes reprises sont exercées, et
- * l'amont configuré pointe volontairement vers un hôte invalide.
+ * L'amont n'est jamais touché : seules les routes reprises sont exercées, et
+ * l'amont configuré pointe volontairement vers un hôte invalide. Redis l'est,
+ * parce que le limiteur voit tout le trafic ; chaque requête vient d'une adresse
+ * tirée au hasard, pour ne jamais hériter du seau d'une exécution précédente.
  */
 #[CoversClass(AppKernelFactory::class)]
 #[CoversClass(Kernel::class)]
@@ -41,7 +43,7 @@ final class BootSmokeTest extends TestCase
 
         $response = $kernel->handle(
             new ServerRequestFactory()
-                ->createServerRequest('GET', 'http://localhost/__ecoshield/health')
+                ->createServerRequest('GET', 'http://localhost/__ecoshield/health', self::peer())
                 ->withHeader('Host', 'localhost'),
         );
 
@@ -51,6 +53,8 @@ final class BootSmokeTest extends TestCase
         $payload = json_decode((string) $response->getBody(), associative: true, flags: JSON_THROW_ON_ERROR);
         self::assertSame('ok', $payload['status']);
         self::assertSame('ecoshield', $payload['gateway']);
+        // Le limiteur est monté dans le vrai pipeline, avec la capacité livrée.
+        self::assertSame('600', $response->getHeaderLine('RateLimit-Limit'));
     }
 
     #[Test]
@@ -60,7 +64,7 @@ final class BootSmokeTest extends TestCase
 
         $response = $kernel->handle(
             new ServerRequestFactory()
-                ->createServerRequest('GET', 'http://localhost/api/products/42')
+                ->createServerRequest('GET', 'http://localhost/api/products/42', self::peer())
                 ->withHeader('Host', 'localhost'),
         );
 
@@ -81,10 +85,20 @@ final class BootSmokeTest extends TestCase
 
         $response = $kernel->handle(
             new ServerRequestFactory()
-                ->createServerRequest('GET', 'http://evil.example/__ecoshield/health')
+                ->createServerRequest('GET', 'http://evil.example/__ecoshield/health', self::peer())
                 ->withHeader('Host', 'evil.example'),
         );
 
         self::assertGreaterThanOrEqual(400, $response->getStatusCode());
+        // Refusé AVANT le limiteur : un Host forgé ne consomme aucun jeton.
+        self::assertFalse($response->hasHeader('RateLimit-Limit'));
+    }
+
+    /**
+     * @return array{REMOTE_ADDR: string}
+     */
+    private static function peer(): array
+    {
+        return ['REMOTE_ADDR' => sprintf('2001:db8:%x::%x', random_int(0, 0xffff), random_int(1, 0xffff))];
     }
 }

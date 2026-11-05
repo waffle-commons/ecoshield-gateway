@@ -35,12 +35,13 @@ Le crédit est donné au rapporteur dans l'avis publié, sauf demande contraire.
 
 ## 🔖 Versions supportées
 
-Ce projet est une **preuve de concept**. Seule la branche courante reçoit des correctifs ; il n'y a
-ni version LTS ni rétroportage.
+Ce projet est en **alpha** : la `0.2.0`, construite sur `waffle-commons` `0.1.0-beta7`, est en
+préparation. Seule la dernière version publiée reçoit des correctifs ; il n'y a ni version LTS ni
+rétroportage. Le numéro de version décrit la passerelle, pas le framework.
 
 | Version | Supportée |
 |---|---|
-| `0.1.0-beta6` (courante) | ✅ |
+| `0.1.x` (dernière publiée) | ✅ — remplacée par la `0.2.x` à sa publication |
 | Antérieures | ❌ |
 
 Le framework sous-jacent suit son propre cycle : voir la politique de
@@ -67,6 +68,14 @@ contradictoires, peut être lu de deux façons. Quand la passerelle et l'amont l
 **une requête en devient deux** — c'est la matière première du *request smuggling*. La passerelle
 **refuse (400)** plutôt que de deviner.
 
+Dans la pile livrée, ce refus est un garde-fou : Caddy tranche avant PHP (il retire `Content-Length`
+dès qu'un `Transfer-Encoding` est présent, et refuse un double `Content-Length` en 400), si bien que
+la passerelle ne voit jamais les deux ensemble — mesuré, [`BENCHMARK_RESULTS.md`](./BENCHMARK_RESULTS.md)
+§6. Dans l'autre sens, **la passerelle n'émet jamais de requête au cadrage ambigu** : depuis la
+`0.2.0`, une requête amont porte un seul cadrage (vérifié sur le fil). Jusqu'à la `0.1.1`, un corps
+relayé partait avec `Transfer-Encoding: chunked` et le `Content-Length` du client, et nginx le
+refusait.
+
 ### Maîtrise de la destination
 
 L'amont est fixé par l'exploitant (`UPSTREAM_URL`). Du message entrant, la passerelle ne reprend
@@ -92,19 +101,48 @@ réponse privée d'un client à un autre est la fuite classique des caches de pa
 - **toute requête portant `Authorization` ou `Cookie`** ;
 - toute réponse autre que `200`, ou portant `Set-Cookie`, `Cache-Control: no-store` ou `private`.
 
+### Limitation de débit de tout le trafic
+
+Un seau à jetons par adresse cliente, partagé dans Redis par tous les workers et toutes les
+instances : 600 requêtes par minute par défaut, rafales comprises (`config/app.yaml`). Au-delà, la
+passerelle répond **429** avec `Retry-After`, avant le routage : ni le Shield, ni la base, ni le
+monolithe ne voient la requête. Le contrôle d'hôte passe avant, si bien qu'un `Host` forgé ne
+consomme aucun jeton.
+
+L'adresse n'est lue dans `X-Forwarded-For` que si la connexion vient d'un proxy déclaré dans
+`TRUSTED_PROXIES`. Un client ne peut donc pas s'ouvrir un seau neuf en forgeant cet en-tête.
+
+### Résilience vers l'amont
+
+- **Aucun délai infini** : 1 s pour la connexion, 10 s au total par défaut, 120 s au plus. Un
+  monolithe qui ne répond plus ne bloque pas un worker indéfiniment ; en contrepartie, un transfert
+  plus long que le délai total est coupé.
+- **Reprises des seules méthodes idempotentes.** Un `POST` ou un `PATCH` n'est jamais rejoué, quelle
+  que soit la configuration : la passerelle ignore la sémantique de l'amont, et une requête rejouée
+  peut dupliquer une écriture.
+- **Disjoncteur partagé.** Quand l'amont échoue en série, la passerelle cesse de l'appeler et répond
+  **503** en quelques millisecondes, jusqu'à un essai après la période de refroidissement.
+
+### Panne de Redis : la disponibilité d'abord
+
+Redis porte le Shield, le circuit du disjoncteur et les seaux du limiteur. S'il tombe, la passerelle
+**continue de servir** : le Shield laisse passer, le disjoncteur se comporte comme fermé, le limiteur
+laisse passer (`on_storage_failure: open`), et chacun le journalise en avertissement. C'est un choix
+documenté : **pendant une panne de Redis, il n'y a plus de limitation de débit.** `closed` refuse
+plutôt le trafic (503) ; il convient à des points d'entrée d'authentification, pas à une passerelle
+dont le rôle est de servir.
+
 ### Absence de fuite d'état entre requêtes
 
 Le mode worker garde les services en mémoire d'une requête à l'autre : un état résiduel devient une
 fuite de données entre clients. L'audit `igor-php` vérifie cette propriété et **bloque la
-publication à la moindre alerte** : actuellement **0 KO** sur 11 fichiers de services audités,
-dont 10 sans état. Le seul avertissement porte sur le point d'entrée SAPI, qui lit `MAX_REQUESTS`
-dans l'environnement du processus une fois au démarrage du worker, avant la boucle de requêtes —
-c'est l'endroit prévu pour cela, et rien n'est conservé d'une requête à l'autre.
+publication à la moindre alerte** : actuellement **15 fichiers de services audités, 15 sans état,
+0 KO, 0 avertissement** (igor 0.10.1).
 
 ### Erreurs sans divulgation
 
-Une panne amont devient un `502` dont le message ne nomme jamais la topologie interne. Le détail
-diagnostique reste dans les journaux.
+Une panne amont devient un `502`, un circuit ouvert un `503` ; aucun des deux messages ne nomme la
+topologie interne. Le détail diagnostique reste dans les journaux.
 
 ---
 
@@ -119,7 +157,8 @@ EcoShield **ne vérifie aucune identité**. Elle relaie les en-têtes d'authenti
 qui reste seul juge. Le `SecurityContext` de la passerelle est explicitement anonyme.
 
 **Conséquence :** la passerelle ne remplace ni un WAF, ni un fournisseur d'identité, ni un contrôle
-d'accès applicatif. L'authentification de bord relève du framework (`waffle-commons/auth`, beta7).
+d'accès applicatif. L'authentification de bord relève du framework (`waffle-commons/auth`), que la
+passerelle n'intègre pas.
 
 ### Aucune garde SSRF sur le client amont — délibérément
 
@@ -130,13 +169,20 @@ destination n'est jamais dérivée d'une donnée fournie par le client.**
 **Conséquence :** rendre `UPSTREAM_URL` modifiable par une entrée utilisateur transformerait la
 passerelle en relais SSRF. Cette variable est une donnée d'exploitation, jamais applicative.
 
-### Aucune limitation de débit
+### Aucune protection contre le déni de service distribué
 
-Ni quota, ni coupe-circuit, ni protection contre le déni de service. Une passerelle sans limiteur
-relaie fidèlement une attaque volumétrique vers l'amont.
+Le limiteur borne le débit **par adresse**. Une attaque volumétrique venue de milliers d'adresses
+reste sous le quota de chacune et atteint la passerelle ; derrière un répartiteur de charge non
+déclaré dans `TRUSTED_PROXIES`, tous les clients partagent au contraire le seau du répartiteur.
 
-**Conséquence :** placer un limiteur en amont (CDN, WAF, ingress) tant que `resilience-net`
-(beta7 `NET-01`) n'est pas intégré.
+**Conséquence :** la protection volumétrique reste celle d'un CDN, d'un WAF ou de l'ingress. Le
+limiteur protège le monolithe des rafales d'un client, pas l'infrastructure d'une attaque.
+
+### Redis est un composant sensible
+
+Il garde des réponses mises en cache, dont celles de la route reprise `/api/users/{id}` (adresses
+électroniques comprises dans le laboratoire), et l'état du disjoncteur et du limiteur. Le traiter
+comme la base de données : réseau privé, jamais exposé. La pile livrée ne publie aucun port Redis.
 
 ### Aucun chiffrement de bout en bout imposé
 
@@ -152,8 +198,9 @@ réseau interne.
 | Contrôle | Statut |
 |---|---|
 | Analyse statique (Mago : lint, analyse, périmètre) | 0 diagnostic, aucune ligne de base tolérée |
-| Tests | 42 tests, **99.15 %** de couverture d'instructions |
-| Sûreté en mode worker (`igor-php`) | **0 KO** sur 11 fichiers · 10 sans état · 1 avertissement documenté |
+| Tests | 85 tests, **99.50 %** de couverture des lignes ; ceux du pool, du disjoncteur et du limiteur contre un vrai Redis |
+| Sûreté en mode worker (`igor-php` 0.10.1) | **0 KO** sur 15 fichiers · 15 sans état · 0 avertissement |
+| Périmètre (k6 + socket brute) | **280/280** assertions, aucun désync (laboratoire, image de production de la `0.2.0`) |
 | Audit des dépendances (`composer audit`) | intégré à la CI |
 | Recherche de secrets (TruffleHog) | intégrée à la CI |
 | SBOM (CycloneDX) | produit à chaque exécution de CI |

@@ -1,0 +1,18 @@
+# Surcharge du BANC, chargée avec APP_ENV=bench (docker-compose.perf.yml) par-dessus
+# app.yaml. Elle ne coupe que ce qui fausserait une mesure, et rien d'autre :
+#
+#  - le limiteur : le générateur k6 envoie toute la charge depuis UNE adresse, et
+#    le limiteur la couperait à `capacity` requêtes par minute ;
+#  - le Shield sur les routes reprises : la comparaison de lecture doit rester la
+#    même requête sur la même base des deux côtés, pas un hit de cache contre un
+#    monolithe qui interroge sa base.
+#
+# Le disjoncteur reste actif : il fait partie du chemin proxyfié livré.
+waffle:
+  security:
+    rate_limit:
+      enabled: false
+
+gateway:
+  rescue:
+    cache: false

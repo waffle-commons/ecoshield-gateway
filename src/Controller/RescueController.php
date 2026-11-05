@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Shield\ResponseCache;
 use PDO;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 use Waffle\Commons\Contracts\Config\ConfigInterface;
 use Waffle\Commons\Contracts\Data\Connection\RelationalConnectionPoolInterface;
@@ -18,8 +20,9 @@ use Waffle\Exception\RenderingException;
 /**
  * Pilier 1 — **Interception (Rescue)**.
  *
- * Les routes servies ici ne quittent jamais le worker : pas de proxy, pas de
- * base de données, pas de bootstrap de framework legacy. C'est la moitié
+ * Les routes servies ici ne passent jamais par le monolithe : pas de proxy, pas
+ * de bootstrap de framework legacy — au plus une lecture en base, par le pool du
+ * worker, et le Shield devant elle. C'est la moitié
  * « Strangler Fig » du POC — on reprend une route à la fois au monolithe, en
  * commençant par celles qui lui coûtent le plus cher, pendant que tout le reste
  * continue d'être proxyfié sans rien changer côté client.
@@ -102,12 +105,31 @@ final class RescueController extends BaseController
      * compare des percentiles de latence, et mélanger deux statuts mélangerait
      * deux distributions. C'est le même choix que la démo de lecture du squelette.
      *
+     * Le Shield sert aussi cette route (`gateway.rescue.cache`) : un hit ne
+     * touche pas la base, et les mêmes refus s'appliquent qu'aux réponses du
+     * monolithe — rien derrière un `Authorization` ou un `Cookie`, rien d'autre
+     * qu'un 200. Le banc le coupe, pour que la lecture comparée reste la même
+     * requête des deux côtés.
+     *
      * @throws RenderingException
      */
     #[Route(path: 'api/users/{id}', methods: [Routing::METHOD_GET], name: 'user')]
     #[PublicAccess]
-    public function user(string $id, RelationalConnectionPoolInterface $pool): ResponseInterface
-    {
+    public function user(
+        string $id,
+        ServerRequestInterface $request,
+        RelationalConnectionPoolInterface $pool,
+        ResponseCache $shield,
+        ConfigInterface $config,
+    ): ResponseInterface {
+        $shielded = $config->getBool('gateway.rescue.cache') !== false;
+        if ($shielded) {
+            $cached = $shield->lookup($request, $this->responseFactory->createResponse());
+            if ($cached instanceof ResponseInterface) {
+                return $cached;
+            }
+        }
+
         try {
             $pdo = $pool->acquire()->pdo();
             $statement = $pdo->prepare('SELECT id, email, created_at FROM users WHERE id = ?');
@@ -135,11 +157,13 @@ final class RescueController extends BaseController
             ], status: 503);
         }
 
-        return $this->jsonResponse(data: [
+        $response = $this->jsonResponse(data: [
             'found' => $user !== null,
             'user' => $user,
             'served_by' => 'ecoshield-gateway',
         ]);
+
+        return $shielded ? $shield->store($request, $response) : $response;
     }
 
     /**

@@ -24,9 +24,11 @@ if (!$autoloader) {
 define('APP_ROOT', realpath(dirname(__DIR__)));
 const APP_CONFIG = 'config';
 
-// Valeurs d'environnement du test : aucune n'est jointe pendant les tests — la
-// passerelle est assemblée, pas connectée.
+// Valeurs d'environnement du test. L'amont n'est jamais joint ; Redis l'est, parce
+// que le limiteur de débit voit TOUT le trafic, sondes comprises : le test de
+// fumée le prouve dans le vrai pipeline.
 putenv('APP_ENV=dev');
 putenv('APP_DEBUG=true');
 putenv('UPSTREAM_URL=http://legacy.invalid:80');
 putenv('CACHE_ADAPTER=array');
+putenv('REDIS_DSN=' . AppTests\Helper\TestRedis::dsn());

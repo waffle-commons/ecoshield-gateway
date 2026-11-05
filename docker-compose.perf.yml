@@ -29,6 +29,10 @@ services:
     cpus: 2
     mem_limit: 1g
     environment:
+      # Charge config/app_bench.yaml par-dessus app.yaml : limiteur coupé (k6 tire
+      # depuis une seule adresse) et Shield coupé sur les routes reprises (la
+      # lecture comparée doit rester la même requête des deux côtés). Rien d'autre.
+      APP_ENV: 'bench'
       WORKER_COUNT: '2'
       # 2 workers résidents + 2 threads libres. Le pool doit rester strictement
       # plus grand que le nombre de workers (FrankenPHP refuse l'égalité), et
@@ -46,7 +50,12 @@ services:
       # rigoureusement invisible — on mesurerait la fréquence de recyclage, pas
       # l'étanchéité du worker. Le banc écosystème beta6 consigne exactement le
       # même piège (`bench/README.md`, « Trap 3 »).
-      MAX_REQUESTS: '1000000'
+      #
+      # 1 000 000 ne suffisait pas : la campagne 0.1.1 (3 h, 3 239 963 requêtes)
+      # contenait UN recyclage, si bien qu'elle prouve « pas de dérive sur une
+      # fenêtre contenant un recyclage », pas « un worker a tenu 3 h ». La valeur
+      # reste au-dessus du total de la campagne, recyclage compris.
+      MAX_REQUESTS: '10000000'
       # Ouvre `/__ecoshield/memory`. Fermée partout ailleurs, y compris dans le
       # compose par défaut : c'est une sonde de banc, pas un point d'accès.
       ECOSHIELD_DIAGNOSTICS: '1'
@@ -98,7 +107,7 @@ services:
   # que la campagne cherche à mesurer. Même choix que `bench-postgres` côté
   # écosystème.
   bench-postgres:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
     container_name: ecoshield-postgres
     cpus: 2
     mem_limit: 1g

@@ -23,6 +23,144 @@ La trajectoire suit la maturité de la passerelle, pas le calendrier du framewor
 
 ---
 
+## [0.2.0] — 2026-11
+
+_Alpha, construite et vérifiée sur les paquets `waffle-commons` **`0.1.0-beta7`** publiés sur Packagist
+(`composer.lock`), dans l'image de production._
+
+### Ajouté
+
+- **Client amont résilient** (`[NET-02]`, `[NET-03]` du framework) : le proxy passe désormais par
+  `RetryingClient(CircuitBreakerClient(Client))` de `waffle-commons/http-client`.
+  - **Délais bornés** : 1 s pour la connexion, 10 s au total par défaut, jamais infinis. Une réponse plus
+    longue à transférer que le délai total est coupée.
+  - **Reprises des seules méthodes idempotentes** (GET, HEAD, OPTIONS, PUT, DELETE), sur échec réseau ou
+    429/502/503/504, avec un recul exponentiel à gigue complète. La passerelle ne rejoue jamais un POST ni
+    un PATCH, quelle que soit la configuration : elle ignore la sémantique de l'amont, et une requête
+    rejouée peut dupliquer une commande.
+  - **Disjoncteur** dont l'état est partagé dans Redis par tous les workers et toutes les instances.
+    Circuit ouvert, la passerelle répond **503** sans appeler le monolithe ; une panne de l'amont reste un
+    **502**. Redis indisponible, le disjoncteur laisse passer, avec un avertissement dans le journal.
+  - Réglages dans `config/app.yaml`, sous `waffle.http_client.*` : les clés du squelette du framework.
+- **Limitation de débit de tout le trafic** (`[NET-01]`) : un seau à jetons par IP cliente, partagé dans
+  Redis. Par défaut 600 requêtes par minute, rafales comprises ; au-delà, **429** avec `Retry-After` et
+  les en-têtes `RateLimit-*`.
+  - Le limiteur se place après le contrôle d'hôte, si bien qu'un `Host` forgé ne consomme aucun jeton, et
+    avant le routage : un client au-delà de son quota n'atteint ni le Shield, ni la base, ni le monolithe.
+  - L'adresse n'est lue dans `X-Forwarded-For` que derrière les proxys de `TRUSTED_PROXIES`. Un en-tête
+    forgé par le client n'ouvre pas de nouveau seau.
+  - Redis indisponible, le trafic passe (`on_storage_failure: open`), avec un avertissement dans le journal.
+- **Le Shield sert aussi la route reprise** `/api/users/{id}` (`gateway.rescue.cache`) : un hit ne touche
+  pas la base, et une réponse 503 (base indisponible) n'est jamais mise en cache.
+- **Laboratoire Strangler Fig** (`docker-compose.lab.yml`) : la passerelle devant le vrai monolithe
+  Symfony 5.4 du banc, avec la base PostgreSQL que les deux camps lisent. On y observe la route reprise
+  derrière le Shield, une route proxyfiée mise en cache, une route proxyfiée privée, le limiteur, et le
+  disjoncteur quand le monolithe tombe. Aucune borne CPU : c'est un terrain d'essai, pas une mesure.
+- **Le monolithe de banc est versionné et s'installe depuis son verrou.** `bench/legacy-symfony/app/` est
+  suivi, sans `vendor/`, `var/` ni `.env`. `bootstrap.sh` installe ses dépendances depuis `composer.lock`,
+  avec des images PHP 8.3 et Composer épinglées par digest. Jusqu'ici, le script recréait le monolithe à
+  chaque exécution (`create-project`, `composer require` sans contrainte, recettes Flex lues sur le
+  réseau, installeur Composer exécuté sans vérification de signature). C'est le monolithe que la campagne
+  0.1.1 a mesuré (Symfony 5.4.45, doctrine/dbal 4.4.4) ; les stubs, désormais redondants, disparaissent.
+- **`bin/framework-local.sh`** : construire la passerelle sur une version non publiée de
+  `waffle-commons`, depuis le monorepo, sans rien versionner (procédure dans `CONTRIBUTING.md`). C'est
+  ainsi que l'alpha a été construite et vérifiée sur `0.1.0-beta7` avant sa publication ; la `0.2.0`
+  elle-même est construite sur les paquets publiés.
+
+### Modifié
+
+- **Documentation de l'alpha.**
+  - README : architecture, laboratoire, routes, configuration, état du projet.
+  - `SECURITY.md` : limiteur, résilience amont, panne de Redis, cadrage des messages.
+  - `BENCHMARK_RESULTS.md` : une note de portée en tête dit que ses chiffres sont ceux de la `0.1.1`.
+  - Le README ne prétend plus que la passerelle n'importe que des interfaces PSR : c'était faux depuis
+    la `0.1.0`, ses fabriques assemblent des classes publiées du framework. Ce qui tient, et qu'il dit
+    désormais, c'est qu'elle ne passe que par la surface publique.
+- **Sonde du pool espacée** (`[CARRY-01]` du framework) : une connexion qui a fait ses preuves depuis
+  moins de 500 ms est prêtée sans `SELECT 1`, soit un aller-retour de moins par lecture reprise
+  (`DB_PING_FRESHNESS_MS` ; 0 rétablit la sonde à chaque emprunt).
+- **Banc : `APP_ENV=bench` charge `config/app_bench.yaml`**, qui ne coupe que ce qui fausserait une mesure.
+  Le limiteur est coupé, parce que k6 tire depuis une seule adresse. Le Shield de la route reprise l'est
+  aussi, pour que la lecture comparée reste la même requête des deux côtés. `MAX_REQUESTS` passe à
+  10 000 000 : la campagne 0.1.1 contenait un recyclage de worker.
+
+- **`ext-redis` est requis** : l'état partagé du disjoncteur et du limiteur passe par le pool phpredis de
+  `waffle-commons/data`. Les tests du pool, du disjoncteur et du limiteur tournent contre un vrai Redis
+  (`ECOSHIELD_TEST_REDIS_DSN`), et la CI démarre le sien, à la même image et au même digest que la pile.
+- **Chaîne d'outils alignée sur l'écosystème beta7** : `carthage-software/mago` `^1.59` (1.59.0),
+  `igor-php/igor-php` `^0.10.1` et PHPUnit 12.5.43. La CI épingle l'auditeur igor en **0.10.1**, avec la
+  vérification stricte de l'écosystème : binaire en cache supprimé, puis correspondance exacte de la ligne
+  de version. L'ancien contrôle `grep -qF` pouvait valider la bannière de téléchargement au lieu du binaire
+  réellement exécuté.
+- **Actions GitHub alignées sur le modèle de composant** : `actions/checkout` v7, `actions/cache` v6, et
+  TruffleHog épinglé en `v3.99.7` au lieu de suivre `main`.
+
+### Sécurité
+
+- **FrankenPHP 1.13.2 sur PHP 8.5.12**, au lieu de FrankenPHP 1.12.2 : ce sont les publications de
+  sécurité du 2026-10-21 contre PHP2Shell (CVE-2026-109618 et CVE-2026-109619).
+- **Toutes les images sont épinglées par digest** : FrankenPHP, Composer (`composer:latest` jusqu'ici),
+  Nginx, PHP-FPM 8.3 (le stand-in comme le monolithe Symfony), Redis et PostgreSQL. Une étiquette bouge,
+  un digest non : deux constructions de la même révision donnent désormais la même image. Redis et
+  PostgreSQL reprennent les digests de l'écosystème `waffle-commons`.
+
+### Corrigé
+
+- **Les requêtes avec corps atteignent enfin le monolithe.** Depuis la 0.1.0, tout POST, PUT ou PATCH
+  relayé vers un monolithe derrière nginx recevait **400**.
+  - Le client HTTP du framework envoyait à la fois `Transfer-Encoding: chunked` et le `Content-Length` du
+    client : deux cadrages dans une même requête, ce que la RFC 9112 §6.1 interdit. C'est corrigé dans
+    `waffle-commons/http-client` 0.1.0-beta7.
+  - Côté passerelle, une requête sans corps part désormais sans corps. Jusqu'ici, chaque GET relayé
+    emportait un corps vide en `chunked` et une poignée de main `Expect: 100-continue`.
+  - Le corps se lit depuis son début, parce que la fabrique de requête du framework a déjà lu un POST JSON
+    pour l'analyser.
+  - Vérifié sur le fil puis dans le laboratoire : POST, PUT, PATCH et DELETE en JSON, un formulaire, un envoi
+    `chunked` et 1 Mio atteignent le monolithe Symfony.
+- **Une panne de Redis ne fait plus tomber la passerelle.** Le Shield laissait remonter l'indisponibilité
+  de son stockage : Redis arrêté, toute route mise en cache répondait 500, et chaque requête était
+  journalisée en `critical`. Le cache est une optimisation, l'amont reste la source : une lecture devient
+  un miss, une écriture n'a pas lieu (`X-EcoShield-Cache: BYPASS`), avec un avertissement. Vérifié dans le
+  laboratoire : Redis arrêté, toutes les routes répondent 200, et le limiteur comme le disjoncteur
+  laissent passer en le journalisant. Au retour de Redis, le cache reprend (MISS puis HIT) sans redémarrer
+  la passerelle.
+
+Deux constats du passage à igor 0.9.7 :
+
+- Le contrôleur frontal lit `MAX_REQUESTS` dans le registre d'environnement (processus > `.env`), comme
+  `APP_ENV`, et non plus dans la superglobale `$_SERVER` — même correctif que le squelette du framework.
+- `ResponseCache::store()` porte un `#[WorkerSafe]` motivé. igor 0.9.7 signale toute écriture *à travers*
+  un service injecté. Ici, l'écriture part vers le backend PSR-16 : Redis dans la configuration livrée, ou
+  le cache fichier. L'adaptateur `array` implémente `ResettableInterface` et `Container::reset()` le vide
+  après chaque requête. Motif vérifié dans le code, pas supposé ; l'audit rend 12 OK, 0 KO, 0 WARN.
+  Avec igor 0.10.1, il rend 15 OK, 0 KO, 0 WARN.
+
+### Vérifié
+
+Sur les paquets publiés et l'image de production, dans le laboratoire. Ce sont des contrôles, pas des
+mesures publiées.
+
+- **Portes** : mago sans aucune sortie, OK (85 tests, 253 assertions), 99.50 % des lignes, igor 0.10.1
+  15/15 sans état, `composer audit` sans avis.
+- **Image** : les 15 paquets `waffle-commons` en `0.1.0-beta7`, aucun paquet de développement, FrankenPHP
+  1.13.2 sur PHP 8.5.12.
+- **Routes** : la route reprise passe de MISS à HIT, le catalogue proxyfié aussi ; les commandes, privées,
+  ne sont jamais mises en cache (BYPASS) ; la sonde mémoire reste fermée (404).
+- **Corps** : un POST en JSON, un formulaire, un envoi `chunked`, un PUT de 1 Mio et un PATCH atteignent le
+  monolithe, qui répond lui-même 405 sur ses routes GET.
+- **Reprises** : le monolithe arrêté, un GET et un PUT font 3 tentatives, un POST exactement 1.
+- **Disjoncteur** : circuit ouvert, la passerelle répond 503 sans appeler le monolithe, et le circuit se
+  referme une trentaine de secondes après son retour.
+- **Pannes** : Redis arrêté, toutes les routes répondent 200, et le cache reprend à son retour (MISS puis
+  HIT) ; PostgreSQL arrêté, une lecture en cache répond 200 et une lecture absente 503, jamais mise en
+  cache.
+- **Limiteur** : 700 requêtes d'un même client, 32 à la fois : 621 × 200, puis 79 × 429 portant
+  `RateLimit-*` et `Retry-After`.
+- **Périmètre** : k6 280/280 assertions ; à la socket brute, une seule réponse par message, aucun désync,
+  et un double `Content-Length` refusé par Caddy.
+
+---
+
 ## [0.1.1] — 2026-09
 
 _Construite et vérifiée sur `waffle-commons` **`0.1.0-beta6`**, installé depuis Packagist._

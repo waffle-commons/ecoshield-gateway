@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace AppTests\Shield;
 
 use App\Shield\ResponseCache;
+use AppTests\Helper\WarningRecorder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Waffle\Commons\Cache\Adapter\ArrayCache;
+use Waffle\Commons\Cache\Factory\CacheFactory;
 use Waffle\Commons\Http\Factory\ResponseFactory;
 use Waffle\Commons\Http\Factory\ServerRequestFactory;
 use Waffle\Commons\Http\Factory\StreamFactory;
@@ -71,6 +73,29 @@ final class ResponseCacheTest extends TestCase
     public function a_cold_cache_reports_no_hit(): void
     {
         self::assertNull($this->shield()->lookup($this->request(), new ResponseFactory()->createResponse()));
+    }
+
+    #[Test]
+    public function an_unreachable_cache_backend_is_a_bypass_never_an_error(): void
+    {
+        // Le vrai adaptateur Redis, sur un port où rien n'écoute : la panne est
+        // celle de la production, pas une imitation. Le Shield est une
+        // optimisation — sans son stockage, la réponse passe, et le journal le dit.
+        $logger = new WarningRecorder();
+        $shield = new ResponseCache(
+            cache: new CacheFactory()->create('redis', ['dsn' => 'redis://127.0.0.1:1', 'prefix' => 'ecoshield:']),
+            streams: new StreamFactory(),
+            logger: $logger,
+        );
+
+        self::assertNull($shield->lookup($this->request(), new ResponseFactory()->createResponse()));
+
+        $passed = $shield->store($this->request(), $this->response());
+        self::assertSame(200, $passed->getStatusCode());
+        self::assertSame('BYPASS', $passed->getHeaderLine('X-EcoShield-Cache'));
+        // Le corps a été lu pour la mise en cache : il doit rester entier malgré l'échec.
+        self::assertSame('{"ok":true}', (string) $passed->getBody());
+        self::assertCount(2, $logger->warnings);
     }
 
     #[Test]

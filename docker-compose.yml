@@ -27,7 +27,13 @@ services:
       # changer : la passerelle ne reprend du message entrant que chemin + query.
       UPSTREAM_URL: 'http://legacy-nginx:80'
       CACHE_ADAPTER: 'redis'
+      # Redis porte le Shield, le circuit du disjoncteur et les seaux du limiteur.
       REDIS_DSN: 'redis://redis:6379'
+      # Proxys de confiance DEVANT la passerelle (répartiteur de charge, CDN) :
+      # adresses ou CIDR séparés par des virgules. Vide ici, parce que la
+      # passerelle publie elle-même son port ; derrière un répartiteur, le
+      # renseigner, sinon tous les clients partagent le seau du limiteur.
+      TRUSTED_PROXIES: '${TRUSTED_PROXIES:-}'
       # Nombre de requêtes servies avant recyclage du worker. Le laisser élevé
       # est le point : un worker qui se recycle rarement est un worker dont le
       # framework reste chaud.
@@ -55,7 +61,7 @@ services:
       start_period: 20s
 
   legacy-nginx:
-    image: nginx:1.27-alpine
+    image: nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
     container_name: ecoshield-legacy-nginx
     # Aucun port publié : le monolithe n'est joignable QUE par la passerelle.
     # C'est tout l'intérêt du bouclier — un amont accessible en direct se
@@ -69,7 +75,7 @@ services:
       - legacy-fpm
 
   legacy-fpm:
-    image: php:8.3-fpm-alpine
+    image: php:8.3-fpm-alpine@sha256:41ebe02446a39ca8fa4e0b2b9e6ce819271b3cf3afac16f9a9a4524f855337ce
     container_name: ecoshield-legacy-fpm
     volumes:
       - ./legacy/public:/var/www/html/public:ro
@@ -83,7 +89,7 @@ services:
       PHP_MEMORY_LIMIT: '256M'
 
   redis:
-    image: redis:7-alpine
+    image: redis:7-alpine@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2
     container_name: ecoshield-redis
     command: ['redis-server', '--save', '', '--appendonly', 'no']
     healthcheck:

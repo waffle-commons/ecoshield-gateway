@@ -29,7 +29,6 @@ use Waffle\Commons\Http\Factory\RequestFactory;
 use Waffle\Commons\Http\Factory\ResponseFactory;
 use Waffle\Commons\Http\Factory\StreamFactory;
 use Waffle\Commons\Http\Factory\UriFactory;
-use Waffle\Commons\HttpClient\Client;
 use Waffle\Commons\Log\StreamLogger;
 use Waffle\Commons\Pipeline\CoreRoutingMiddleware;
 use Waffle\Commons\Pipeline\Middleware\SecureHeadersMiddleware;
@@ -44,9 +43,10 @@ use Waffle\Commons\Security\Security;
  * Assemblage de la passerelle.
  *
  * Volontairement plus courte que la fabrique du squelette : une passerelle n'a
- * ni base de données, ni sessions, ni CSRF, ni pont d'authentification. Ce
- * qu'elle a — un client HTTP en flux, un cache, un routeur, un pipeline — est
- * ici, et rien d'autre. Chaque service câblé correspond à une phrase du README.
+ * ni sessions, ni CSRF, ni pont d'authentification. Ce qu'elle a — un client
+ * amont résilient, un limiteur de débit, un cache, le pool des routes reprises,
+ * un routeur, un pipeline — est ici, et rien d'autre. Chaque service câblé correspond à une
+ * phrase du README.
  */
 final class AppKernelFactory
 {
@@ -75,14 +75,21 @@ final class AppKernelFactory
         $container->set(RequestFactoryInterface::class, $requestFactory);
         $container->set(ConfigInterface::class, $config);
 
+        // Le journal sert dès le client amont : le disjoncteur y signale une panne
+        // de son stockage (il laisse alors passer).
+        $logger = new StreamLogger();
+
         // --- Le client amont --------------------------------------------------
+        // Délais bornés, reprises des seules méthodes idempotentes, disjoncteur
+        // partagé dans Redis (NET-02/03) : voir UpstreamClientFactory.
+        //
         // Aucun SsrfGuard n'est câblé, et c'est un choix, pas un oubli : la
         // destination est FIXÉE par l'exploitant (`gateway.upstream`), jamais
         // par le client — ProxyController ne reprend du message entrant que le
         // chemin et la query. Un guard SSRF rejetterait au contraire l'adressage
         // interne qui est précisément la raison d'être d'une passerelle
         // (`http://legacy:80` n'est pas routable publiquement).
-        $client = new Client($responseFactory, $streamFactory);
+        $client = UpstreamClientFactory::create($config, $responseFactory, $streamFactory, $logger);
 
         $upstream = $config->getString('gateway.upstream') ?? 'http://legacy:80';
         $container->set(
@@ -107,6 +114,7 @@ final class AppKernelFactory
                 streams: $streamFactory,
                 ttlSeconds: $config->getInt('gateway.shield.ttl') ?? self::DEFAULT_CACHE_TTL,
                 maxBodyBytes: $config->getInt('gateway.shield.max_body_bytes') ?? self::DEFAULT_MAX_CACHED_BODY,
+                logger: $logger,
             ),
         );
 
@@ -123,7 +131,6 @@ final class AppKernelFactory
         $secureContainer = new SecureContainer($container, $security, $securityContext);
 
         // --- Pipeline ---------------------------------------------------------
-        $logger = new StreamLogger();
         $stack = new MiddlewareStack();
 
         // Prepend : il doit envelopper tout ce qui suit, y compris le routage.
@@ -138,6 +145,15 @@ final class AppKernelFactory
         $trustedHosts = array_values(array_filter($config->getArray('waffle.trusted_hosts') ?? [], is_string(...)));
         if ($trustedHosts !== []) {
             $stack->add(middleware: new TrustedHostMiddleware($trustedHosts));
+        }
+
+        // Limitation de débit de TOUT le trafic (NET-01) : après le contrôle
+        // d'hôte, pour qu'un Host forgé ne consomme aucun jeton, et avant le
+        // routage — un client au-delà de son quota n'atteint ni le Shield, ni la
+        // base, ni le monolithe. Voir RateLimitFactory.
+        $rateLimit = RateLimitFactory::middleware($config, $securityContext, $responseFactory, $logger);
+        if ($rateLimit !== null) {
+            $stack->add(middleware: $rateLimit);
         }
 
         $controllersPath = $config->getString('waffle.paths.controllers') ?? throw new RuntimeException(
@@ -165,7 +181,7 @@ final class AppKernelFactory
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<string, string|int>
      */
     private static function cacheOptions(ConfigInterface $config, string $root): array
     {

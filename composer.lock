@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0820af822d7ecb9b6dc7e475fbee19dd",
+    "content-hash": "98070f46e3506ac876e27b1c778e9368",
     "packages": [
         {
             "name": "predis/predis",
@@ -116,6 +116,54 @@
                 "source": "https://github.com/php-fig/cache/tree/3.0.0"
             },
             "time": "2021-02-03T23:26:27+00:00"
+        },
+        {
+            "name": "psr/clock",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/clock.git",
+                "reference": "e41a24703d4560fd0acb709162f73b8adfc3aa0d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/clock/zipball/e41a24703d4560fd0acb709162f73b8adfc3aa0d",
+                "reference": "e41a24703d4560fd0acb709162f73b8adfc3aa0d",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.0 || ^8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Clock\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "https://www.php-fig.org/"
+                }
+            ],
+            "description": "Common interface for reading the clock.",
+            "homepage": "https://github.com/php-fig/clock",
+            "keywords": [
+                "clock",
+                "now",
+                "psr",
+                "psr-20",
+                "time"
+            ],
+            "support": {
+                "issues": "https://github.com/php-fig/clock/issues",
+                "source": "https://github.com/php-fig/clock/tree/1.0.0"
+            },
+            "time": "2022-11-25T14:36:26+00:00"
         },
         {
             "name": "psr/container",
@@ -596,16 +644,16 @@
         },
         {
             "name": "waffle-commons/cache",
-            "version": "0.1.0-beta6",
+            "version": "0.1.0-beta7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waffle-commons/cache.git",
-                "reference": "d592383dcc31e2a231ae2efefe4ffed3dcc748b3"
+                "reference": "6d7b0c774ec04cce44d29ee92981bdd441d7aef8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waffle-commons/cache/zipball/d592383dcc31e2a231ae2efefe4ffed3dcc748b3",
-                "reference": "d592383dcc31e2a231ae2efefe4ffed3dcc748b3",
+                "url": "https://api.github.com/repos/waffle-commons/cache/zipball/6d7b0c774ec04cce44d29ee92981bdd441d7aef8",
+                "reference": "6d7b0c774ec04cce44d29ee92981bdd441d7aef8",
                 "shasum": ""
             },
             "require": {
@@ -614,12 +662,12 @@
                 "waffle-commons/contracts": "self.version"
             },
             "require-dev": {
-                "carthage-software/mago": "^1.29",
+                "carthage-software/mago": "^1.59",
                 "cyclonedx/cyclonedx-php-composer": "^6.2",
-                "igor-php/igor-php": "^0.7.0",
-                "php-mock/php-mock-phpunit": "^2.15",
+                "igor-php/igor-php": "^0.10.1",
+                "php-mock/php-mock-phpunit": "^2.16",
                 "phpunit/phpunit": "^12.5",
-                "vimeo/psalm": "^6.16"
+                "vimeo/psalm": "^6.20"
             },
             "type": "library",
             "autoload": {
@@ -640,22 +688,22 @@
             "description": "PSR-6 and PSR-16 caching for Waffle Commons: a worker-safe pool and simple-cache facade with pluggable stores.",
             "support": {
                 "issues": "https://github.com/waffle-commons/cache/issues",
-                "source": "https://github.com/waffle-commons/cache/tree/0.1.0-beta6"
+                "source": "https://github.com/waffle-commons/cache/tree/0.1.0-beta7"
             },
-            "time": "2026-09-08T18:44:49+00:00"
+            "time": "2026-11-05T01:46:05+00:00"
         },
         {
             "name": "waffle-commons/config",
-            "version": "0.1.0-beta6",
+            "version": "0.1.0-beta7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waffle-commons/config.git",
-                "reference": "b7e75b1ec396b02879cd9db4afbb44a7c471a790"
+                "reference": "d4e26cb4104e5978c5a3ae4fe67827957ffeb651"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waffle-commons/config/zipball/b7e75b1ec396b02879cd9db4afbb44a7c471a790",
-                "reference": "b7e75b1ec396b02879cd9db4afbb44a7c471a790",
+                "url": "https://api.github.com/repos/waffle-commons/config/zipball/d4e26cb4104e5978c5a3ae4fe67827957ffeb651",
+                "reference": "d4e26cb4104e5978c5a3ae4fe67827957ffeb651",
                 "shasum": ""
             },
             "require": {
@@ -664,12 +712,12 @@
                 "waffle-commons/contracts": "self.version"
             },
             "require-dev": {
-                "carthage-software/mago": "^1.29",
+                "carthage-software/mago": "^1.59",
                 "cyclonedx/cyclonedx-php-composer": "^6.2",
-                "igor-php/igor-php": "^0.7.0",
-                "php-mock/php-mock-phpunit": "^2.15",
+                "igor-php/igor-php": "^0.10.1",
+                "php-mock/php-mock-phpunit": "^2.16",
                 "phpunit/phpunit": "^12.5",
-                "vimeo/psalm": "^6.16"
+                "vimeo/psalm": "^6.20"
             },
             "type": "library",
             "autoload": {
@@ -690,22 +738,22 @@
             "description": "YAML configuration for Waffle Commons: environment-layered parameter loading with %env()% placeholder resolution, fail-secure parsing, and boot-time freezing for FrankenPHP workers. Requires ext-yaml.",
             "support": {
                 "issues": "https://github.com/waffle-commons/config/issues",
-                "source": "https://github.com/waffle-commons/config/tree/0.1.0-beta6"
+                "source": "https://github.com/waffle-commons/config/tree/0.1.0-beta7"
             },
-            "time": "2026-09-08T18:43:40+00:00"
+            "time": "2026-11-05T01:38:15+00:00"
         },
         {
             "name": "waffle-commons/container",
-            "version": "0.1.0-beta6",
+            "version": "0.1.0-beta7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waffle-commons/container.git",
-                "reference": "6bcef78dfff4d41796c5faf013d8e8bc949a7379"
+                "reference": "dd1900f6e031ce70aaedeba4e4920b2478fa7db1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waffle-commons/container/zipball/6bcef78dfff4d41796c5faf013d8e8bc949a7379",
-                "reference": "6bcef78dfff4d41796c5faf013d8e8bc949a7379",
+                "url": "https://api.github.com/repos/waffle-commons/container/zipball/dd1900f6e031ce70aaedeba4e4920b2478fa7db1",
+                "reference": "dd1900f6e031ce70aaedeba4e4920b2478fa7db1",
                 "shasum": ""
             },
             "require": {
@@ -714,12 +762,12 @@
                 "waffle-commons/contracts": "self.version"
             },
             "require-dev": {
-                "carthage-software/mago": "^1.29",
+                "carthage-software/mago": "^1.59",
                 "cyclonedx/cyclonedx-php-composer": "^6.2",
-                "igor-php/igor-php": "^0.7.0",
-                "php-mock/php-mock-phpunit": "^2.15",
+                "igor-php/igor-php": "^0.10.1",
+                "php-mock/php-mock-phpunit": "^2.16",
                 "phpunit/phpunit": "^12.5",
-                "vimeo/psalm": "^6.16"
+                "vimeo/psalm": "^6.20"
             },
             "type": "library",
             "autoload": {
@@ -740,30 +788,32 @@
             "description": "PSR-11 dependency-injection container for Waffle Commons: autowiring, singleton lifecycles, and per-request reset semantics for resident-worker mode.",
             "support": {
                 "issues": "https://github.com/waffle-commons/container/issues",
-                "source": "https://github.com/waffle-commons/container/tree/0.1.0-beta6"
+                "source": "https://github.com/waffle-commons/container/tree/0.1.0-beta7"
             },
-            "time": "2026-09-08T19:02:48+00:00"
+            "time": "2026-11-05T01:38:08+00:00"
         },
         {
             "name": "waffle-commons/contracts",
-            "version": "0.1.0-beta6",
+            "version": "0.1.0-beta7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waffle-commons/contracts.git",
-                "reference": "cf6ffc4e0a99a9965fb1f582859465b5f9c1aa46"
+                "reference": "9a0f59bb84ce0469db9d09fe7aa6c7902f5a76d8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waffle-commons/contracts/zipball/cf6ffc4e0a99a9965fb1f582859465b5f9c1aa46",
-                "reference": "cf6ffc4e0a99a9965fb1f582859465b5f9c1aa46",
+                "url": "https://api.github.com/repos/waffle-commons/contracts/zipball/9a0f59bb84ce0469db9d09fe7aa6c7902f5a76d8",
+                "reference": "9a0f59bb84ce0469db9d09fe7aa6c7902f5a76d8",
                 "shasum": ""
             },
             "require": {
                 "php": "^8.5",
                 "psr/cache": "^3.0",
+                "psr/clock": "^1.0",
                 "psr/container": "^2.0",
                 "psr/event-dispatcher": "^1.0",
                 "psr/http-client": "^1.0",
+                "psr/http-factory": "^1.1",
                 "psr/http-message": "^1.1 || ^2.0",
                 "psr/http-server-handler": "^1.0",
                 "psr/http-server-middleware": "^1.0",
@@ -771,12 +821,12 @@
                 "psr/simple-cache": "^3.0"
             },
             "require-dev": {
-                "carthage-software/mago": "^1.29",
+                "carthage-software/mago": "^1.59",
                 "cyclonedx/cyclonedx-php-composer": "^6.2",
-                "igor-php/igor-php": "^0.7.0",
-                "php-mock/php-mock-phpunit": "^2.15",
+                "igor-php/igor-php": "^0.10.1",
+                "php-mock/php-mock-phpunit": "^2.16",
                 "phpunit/phpunit": "^12.5",
-                "vimeo/psalm": "^6.16"
+                "vimeo/psalm": "^6.20"
             },
             "type": "library",
             "autoload": {
@@ -797,22 +847,22 @@
             "description": "The central contract package for Waffle Commons. Every other waffle-commons/* component depends only on this package and its declared PSR interfaces — the perimeter that keeps components independently replaceable.",
             "support": {
                 "issues": "https://github.com/waffle-commons/contracts/issues",
-                "source": "https://github.com/waffle-commons/contracts/tree/0.1.0-beta6"
+                "source": "https://github.com/waffle-commons/contracts/tree/0.1.0-beta7"
             },
-            "time": "2026-09-08T18:04:59+00:00"
+            "time": "2026-11-05T01:25:55+00:00"
         },
         {
             "name": "waffle-commons/data",
-            "version": "0.1.0-beta6",
+            "version": "0.1.0-beta7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waffle-commons/data.git",
-                "reference": "555b73156404f261dca71d1fd0be5528bf8c7eed"
+                "reference": "62274ae04ca43de01ace9ad23827b2b810da8862"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waffle-commons/data/zipball/555b73156404f261dca71d1fd0be5528bf8c7eed",
-                "reference": "555b73156404f261dca71d1fd0be5528bf8c7eed",
+                "url": "https://api.github.com/repos/waffle-commons/data/zipball/62274ae04ca43de01ace9ad23827b2b810da8862",
+                "reference": "62274ae04ca43de01ace9ad23827b2b810da8862",
                 "shasum": ""
             },
             "require": {
@@ -826,12 +876,12 @@
                 "waffle-commons/contracts": "self.version"
             },
             "require-dev": {
-                "carthage-software/mago": "^1.29",
+                "carthage-software/mago": "^1.59",
                 "cyclonedx/cyclonedx-php-composer": "^6.2",
-                "igor-php/igor-php": "^0.7.0",
-                "php-mock/php-mock-phpunit": "^2.15",
+                "igor-php/igor-php": "^0.10.1",
+                "php-mock/php-mock-phpunit": "^2.16",
                 "phpunit/phpunit": "^12.5",
-                "vimeo/psalm": "^6.16"
+                "vimeo/psalm": "^6.20"
             },
             "suggest": {
                 "ext-mongodb": "To execute document queries live through the MongoDriverSession driver.",
@@ -856,22 +906,22 @@
             "description": "The data and persistence layer for Waffle Commons (RFC-022): a warm connection pool, a backend-agnostic query AST, and parameterized SQL / CQL / MongoDB / Firestore / key-value / GraphQL compilers for resident-worker mode.",
             "support": {
                 "issues": "https://github.com/waffle-commons/data/issues",
-                "source": "https://github.com/waffle-commons/data/tree/0.1.0-beta6"
+                "source": "https://github.com/waffle-commons/data/tree/0.1.0-beta7"
             },
-            "time": "2026-09-08T19:04:35+00:00"
+            "time": "2026-11-05T01:49:42+00:00"
         },
         {
             "name": "waffle-commons/error-handler",
-            "version": "0.1.0-beta6",
+            "version": "0.1.0-beta7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waffle-commons/error-handler.git",
-                "reference": "cf5d9c27269874c1e027b5c68f3ef3c52ed8d2d6"
+                "reference": "d2f6172b8ee0180cfcad9727dbe17fe324e10052"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waffle-commons/error-handler/zipball/cf5d9c27269874c1e027b5c68f3ef3c52ed8d2d6",
-                "reference": "cf5d9c27269874c1e027b5c68f3ef3c52ed8d2d6",
+                "url": "https://api.github.com/repos/waffle-commons/error-handler/zipball/d2f6172b8ee0180cfcad9727dbe17fe324e10052",
+                "reference": "d2f6172b8ee0180cfcad9727dbe17fe324e10052",
                 "shasum": ""
             },
             "require": {
@@ -882,12 +932,12 @@
                 "waffle-commons/contracts": "self.version"
             },
             "require-dev": {
-                "carthage-software/mago": "^1.29",
+                "carthage-software/mago": "^1.59",
                 "cyclonedx/cyclonedx-php-composer": "^6.2",
-                "igor-php/igor-php": "^0.7.0",
-                "php-mock/php-mock-phpunit": "^2.15",
+                "igor-php/igor-php": "^0.10.1",
+                "php-mock/php-mock-phpunit": "^2.16",
                 "phpunit/phpunit": "^12.5",
-                "vimeo/psalm": "^6.16"
+                "vimeo/psalm": "^6.20"
             },
             "type": "library",
             "autoload": {
@@ -908,22 +958,22 @@
             "description": "PSR-15 error handling for Waffle Commons: RFC 7807 application/problem+json responses, PSR-3 logging, and debug-safe rendering that never leaks internals in production.",
             "support": {
                 "issues": "https://github.com/waffle-commons/error-handler/issues",
-                "source": "https://github.com/waffle-commons/error-handler/tree/0.1.0-beta6"
+                "source": "https://github.com/waffle-commons/error-handler/tree/0.1.0-beta7"
             },
-            "time": "2026-09-08T19:15:07+00:00"
+            "time": "2026-11-05T01:38:36+00:00"
         },
         {
             "name": "waffle-commons/http",
-            "version": "0.1.0-beta6",
+            "version": "0.1.0-beta7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waffle-commons/http.git",
-                "reference": "e8ef09c80a956c2de90496944d9eba91b9014a90"
+                "reference": "c0b280e8c1f332695e7f863dd3da40275c5605a3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waffle-commons/http/zipball/e8ef09c80a956c2de90496944d9eba91b9014a90",
-                "reference": "e8ef09c80a956c2de90496944d9eba91b9014a90",
+                "url": "https://api.github.com/repos/waffle-commons/http/zipball/c0b280e8c1f332695e7f863dd3da40275c5605a3",
+                "reference": "c0b280e8c1f332695e7f863dd3da40275c5605a3",
                 "shasum": ""
             },
             "require": {
@@ -934,12 +984,12 @@
                 "waffle-commons/utils": "self.version"
             },
             "require-dev": {
-                "carthage-software/mago": "^1.29",
+                "carthage-software/mago": "^1.59",
                 "cyclonedx/cyclonedx-php-composer": "^6.2",
-                "igor-php/igor-php": "^0.7.0",
-                "php-mock/php-mock-phpunit": "^2.15",
+                "igor-php/igor-php": "^0.10.1",
+                "php-mock/php-mock-phpunit": "^2.16",
                 "phpunit/phpunit": "^12.5",
-                "vimeo/psalm": "^6.16"
+                "vimeo/psalm": "^6.20"
             },
             "type": "library",
             "autoload": {
@@ -960,22 +1010,22 @@
             "description": "PSR-7 HTTP messages and PSR-17 factories for Waffle Commons: immutable request/response objects, streams, and contained file uploads.",
             "support": {
                 "issues": "https://github.com/waffle-commons/http/issues",
-                "source": "https://github.com/waffle-commons/http/tree/0.1.0-beta6"
+                "source": "https://github.com/waffle-commons/http/tree/0.1.0-beta7"
             },
-            "time": "2026-09-08T19:20:42+00:00"
+            "time": "2026-11-05T01:39:11+00:00"
         },
         {
             "name": "waffle-commons/http-client",
-            "version": "0.1.0-beta6",
+            "version": "0.1.0-beta7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waffle-commons/http-client.git",
-                "reference": "b2069b10dea92ce82c5be784c9d7c479c08ec4c6"
+                "reference": "98f28fe57f06526fa60cb3039a2c958cdf4f4d7f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waffle-commons/http-client/zipball/b2069b10dea92ce82c5be784c9d7c479c08ec4c6",
-                "reference": "b2069b10dea92ce82c5be784c9d7c479c08ec4c6",
+                "url": "https://api.github.com/repos/waffle-commons/http-client/zipball/98f28fe57f06526fa60cb3039a2c958cdf4f4d7f",
+                "reference": "98f28fe57f06526fa60cb3039a2c958cdf4f4d7f",
                 "shasum": ""
             },
             "require": {
@@ -984,17 +1034,18 @@
                 "psr/http-client": "^1.0",
                 "psr/http-factory": "^1.0",
                 "psr/http-message": "^1.1 || ^2.0",
+                "psr/log": "^3.0",
                 "waffle-commons/contracts": "self.version",
                 "waffle-commons/utils": "self.version"
             },
             "require-dev": {
-                "carthage-software/mago": "^1.29",
+                "carthage-software/mago": "^1.59",
                 "cyclonedx/cyclonedx-php-composer": "^6.2",
-                "igor-php/igor-php": "^0.7.0",
+                "igor-php/igor-php": "^0.10.1",
                 "nyholm/psr7": "^1.8",
-                "php-mock/php-mock-phpunit": "^2.15",
+                "php-mock/php-mock-phpunit": "^2.16",
                 "phpunit/phpunit": "^12.5",
-                "vimeo/psalm": "^6.16"
+                "vimeo/psalm": "^6.20"
             },
             "type": "library",
             "autoload": {
@@ -1015,22 +1066,22 @@
             "description": "PSR-18 HTTP client for Waffle Commons: default-on SSRF protection, bounded 8 KiB streaming in both directions, timeout ceilings, and concurrent promise-based fan-out.",
             "support": {
                 "issues": "https://github.com/waffle-commons/http-client/issues",
-                "source": "https://github.com/waffle-commons/http-client/tree/0.1.0-beta6"
+                "source": "https://github.com/waffle-commons/http-client/tree/0.1.0-beta7"
             },
-            "time": "2026-09-08T19:22:43+00:00"
+            "time": "2026-11-05T01:39:18+00:00"
         },
         {
             "name": "waffle-commons/log",
-            "version": "0.1.0-beta6",
+            "version": "0.1.0-beta7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waffle-commons/log.git",
-                "reference": "c0233f4bb92963d38b5e7de68527217fb1b964df"
+                "reference": "bd2240f76ca5acaea13a14aa55a12c1505f2d127"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waffle-commons/log/zipball/c0233f4bb92963d38b5e7de68527217fb1b964df",
-                "reference": "c0233f4bb92963d38b5e7de68527217fb1b964df",
+                "url": "https://api.github.com/repos/waffle-commons/log/zipball/bd2240f76ca5acaea13a14aa55a12c1505f2d127",
+                "reference": "bd2240f76ca5acaea13a14aa55a12c1505f2d127",
                 "shasum": ""
             },
             "require": {
@@ -1039,12 +1090,12 @@
                 "waffle-commons/contracts": "self.version"
             },
             "require-dev": {
-                "carthage-software/mago": "^1.29",
+                "carthage-software/mago": "^1.59",
                 "cyclonedx/cyclonedx-php-composer": "^6.2",
-                "igor-php/igor-php": "^0.7.0",
-                "php-mock/php-mock-phpunit": "^2.15",
+                "igor-php/igor-php": "^0.10.1",
+                "php-mock/php-mock-phpunit": "^2.16",
                 "phpunit/phpunit": "^12.5",
-                "vimeo/psalm": "^6.16"
+                "vimeo/psalm": "^6.20"
             },
             "type": "library",
             "autoload": {
@@ -1065,37 +1116,40 @@
             "description": "PSR-3 logging for Waffle Commons: a minimal stream logger with channel separation, safe to hold across FrankenPHP worker requests.",
             "support": {
                 "issues": "https://github.com/waffle-commons/log/issues",
-                "source": "https://github.com/waffle-commons/log/tree/0.1.0-beta6"
+                "source": "https://github.com/waffle-commons/log/tree/0.1.0-beta7"
             },
-            "time": "2026-09-08T19:26:03+00:00"
+            "time": "2026-11-05T01:38:22+00:00"
         },
         {
             "name": "waffle-commons/pipeline",
-            "version": "0.1.0-beta6",
+            "version": "0.1.0-beta7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waffle-commons/pipeline.git",
-                "reference": "fbe127f24df913352c72fad5924ed4cb6da5caef"
+                "reference": "165f72f0b0c918a7e9f3337d5aa9f0e64e77fd3a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waffle-commons/pipeline/zipball/fbe127f24df913352c72fad5924ed4cb6da5caef",
-                "reference": "fbe127f24df913352c72fad5924ed4cb6da5caef",
+                "url": "https://api.github.com/repos/waffle-commons/pipeline/zipball/165f72f0b0c918a7e9f3337d5aa9f0e64e77fd3a",
+                "reference": "165f72f0b0c918a7e9f3337d5aa9f0e64e77fd3a",
                 "shasum": ""
             },
             "require": {
                 "php": "^8.5",
+                "psr/http-factory": "^1.1",
+                "psr/http-message": "^2.0",
                 "psr/http-server-handler": "^1.0",
                 "psr/http-server-middleware": "^1.0",
                 "waffle-commons/contracts": "self.version"
             },
             "require-dev": {
-                "carthage-software/mago": "^1.29",
+                "carthage-software/mago": "^1.59",
                 "cyclonedx/cyclonedx-php-composer": "^6.2",
-                "igor-php/igor-php": "^0.7.0",
-                "php-mock/php-mock-phpunit": "^2.15",
+                "igor-php/igor-php": "^0.10.1",
+                "nyholm/psr7": "^1.8",
+                "php-mock/php-mock-phpunit": "^2.16",
                 "phpunit/phpunit": "^12.5",
-                "vimeo/psalm": "^6.16"
+                "vimeo/psalm": "^6.20"
             },
             "type": "library",
             "autoload": {
@@ -1116,22 +1170,22 @@
             "description": "PSR-15 middleware pipeline for Waffle Commons: an ordered, boot-frozen stack with automatic OPTIONS answering and no per-request mutation.",
             "support": {
                 "issues": "https://github.com/waffle-commons/pipeline/issues",
-                "source": "https://github.com/waffle-commons/pipeline/tree/0.1.0-beta6"
+                "source": "https://github.com/waffle-commons/pipeline/tree/0.1.0-beta7"
             },
-            "time": "2026-09-08T19:28:17+00:00"
+            "time": "2026-11-05T01:37:37+00:00"
         },
         {
             "name": "waffle-commons/routing",
-            "version": "0.1.0-beta6",
+            "version": "0.1.0-beta7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waffle-commons/routing.git",
-                "reference": "e5d4c852babb451d1571b3a7e8db29dfba5e9c83"
+                "reference": "343da8bd50bef54f541913b9419286397d1c4446"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waffle-commons/routing/zipball/e5d4c852babb451d1571b3a7e8db29dfba5e9c83",
-                "reference": "e5d4c852babb451d1571b3a7e8db29dfba5e9c83",
+                "url": "https://api.github.com/repos/waffle-commons/routing/zipball/343da8bd50bef54f541913b9419286397d1c4446",
+                "reference": "343da8bd50bef54f541913b9419286397d1c4446",
                 "shasum": ""
             },
             "require": {
@@ -1141,12 +1195,12 @@
                 "waffle-commons/utils": "self.version"
             },
             "require-dev": {
-                "carthage-software/mago": "^1.29",
+                "carthage-software/mago": "^1.59",
                 "cyclonedx/cyclonedx-php-composer": "^6.2",
-                "igor-php/igor-php": "^0.7.0",
-                "php-mock/php-mock-phpunit": "^2.15",
+                "igor-php/igor-php": "^0.10.1",
+                "php-mock/php-mock-phpunit": "^2.16",
                 "phpunit/phpunit": "^12.5",
-                "vimeo/psalm": "^6.16"
+                "vimeo/psalm": "^6.20"
             },
             "type": "library",
             "autoload": {
@@ -1167,22 +1221,22 @@
             "description": "Attribute-driven routing for Waffle Commons: routes declared with #[Route] next to the controller, discovered at boot, and resolved through an AOT-compiled trie in O(depth).",
             "support": {
                 "issues": "https://github.com/waffle-commons/routing/issues",
-                "source": "https://github.com/waffle-commons/routing/tree/0.1.0-beta6"
+                "source": "https://github.com/waffle-commons/routing/tree/0.1.0-beta7"
             },
-            "time": "2026-09-08T19:31:34+00:00"
+            "time": "2026-11-05T01:39:53+00:00"
         },
         {
             "name": "waffle-commons/runtime",
-            "version": "0.1.0-beta6",
+            "version": "0.1.0-beta7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waffle-commons/runtime.git",
-                "reference": "3b89fa45f5ba54891d03c9938587fc025664d610"
+                "reference": "e76b70e837e75f8a21b5e8a9e0565a26a84a00ed"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waffle-commons/runtime/zipball/3b89fa45f5ba54891d03c9938587fc025664d610",
-                "reference": "3b89fa45f5ba54891d03c9938587fc025664d610",
+                "url": "https://api.github.com/repos/waffle-commons/runtime/zipball/e76b70e837e75f8a21b5e8a9e0565a26a84a00ed",
+                "reference": "e76b70e837e75f8a21b5e8a9e0565a26a84a00ed",
                 "shasum": ""
             },
             "require": {
@@ -1192,12 +1246,12 @@
                 "waffle-commons/contracts": "self.version"
             },
             "require-dev": {
-                "carthage-software/mago": "^1.29",
+                "carthage-software/mago": "^1.59",
                 "cyclonedx/cyclonedx-php-composer": "^6.2",
-                "igor-php/igor-php": "^0.7.0",
-                "php-mock/php-mock-phpunit": "^2.15",
+                "igor-php/igor-php": "^0.10.1",
+                "php-mock/php-mock-phpunit": "^2.16",
                 "phpunit/phpunit": "^12.5",
-                "vimeo/psalm": "^6.16"
+                "vimeo/psalm": "^6.20"
             },
             "type": "library",
             "autoload": {
@@ -1218,22 +1272,22 @@
             "description": "The SAPI-agnostic runtime for Waffle Commons: boots a kernel and emits responses through contracts interfaces only, so the same application runs under FrankenPHP worker mode, PHP-FPM or the CLI server.",
             "support": {
                 "issues": "https://github.com/waffle-commons/runtime/issues",
-                "source": "https://github.com/waffle-commons/runtime/tree/0.1.0-beta6"
+                "source": "https://github.com/waffle-commons/runtime/tree/0.1.0-beta7"
             },
-            "time": "2026-09-08T19:34:03+00:00"
+            "time": "2026-11-05T01:38:02+00:00"
         },
         {
             "name": "waffle-commons/security",
-            "version": "0.1.0-beta6",
+            "version": "0.1.0-beta7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waffle-commons/security.git",
-                "reference": "65704f57b5ede9c8d24036e1eec12239fbe202ce"
+                "reference": "14b304d11e63da3b4b265c85761c3366ec40808a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waffle-commons/security/zipball/65704f57b5ede9c8d24036e1eec12239fbe202ce",
-                "reference": "65704f57b5ede9c8d24036e1eec12239fbe202ce",
+                "url": "https://api.github.com/repos/waffle-commons/security/zipball/14b304d11e63da3b4b265c85761c3366ec40808a",
+                "reference": "14b304d11e63da3b4b265c85761c3366ec40808a",
                 "shasum": ""
             },
             "require": {
@@ -1246,12 +1300,13 @@
                 "waffle-commons/utils": "self.version"
             },
             "require-dev": {
-                "carthage-software/mago": "^1.29",
+                "carthage-software/mago": "^1.59",
                 "cyclonedx/cyclonedx-php-composer": "^6.2",
-                "igor-php/igor-php": "^0.7.0",
-                "php-mock/php-mock-phpunit": "^2.15",
+                "igor-php/igor-php": "^0.10.1",
+                "nyholm/psr7": "^1.8",
+                "php-mock/php-mock-phpunit": "^2.16",
                 "phpunit/phpunit": "^12.5",
-                "vimeo/psalm": "^6.16"
+                "vimeo/psalm": "^6.20"
             },
             "type": "library",
             "autoload": {
@@ -1272,35 +1327,36 @@
             "description": "Hierarchical Attribute-Based Access Control for Waffle Commons: fail-closed by default, object-level voters, a stateless HMAC CSRF subsystem bound to a per-browser session id, and fail-closed CORS.",
             "support": {
                 "issues": "https://github.com/waffle-commons/security/issues",
-                "source": "https://github.com/waffle-commons/security/tree/0.1.0-beta6"
+                "source": "https://github.com/waffle-commons/security/tree/0.1.0-beta7"
             },
-            "time": "2026-09-08T19:37:00+00:00"
+            "time": "2026-11-05T01:39:26+00:00"
         },
         {
             "name": "waffle-commons/utils",
-            "version": "0.1.0-beta6",
+            "version": "0.1.0-beta7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waffle-commons/utils.git",
-                "reference": "5a7199fc5835ee83fc0e9cb7c073a13a098ab9b1"
+                "reference": "20b706720b752f95506ebd60c0861a402706bb7a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waffle-commons/utils/zipball/5a7199fc5835ee83fc0e9cb7c073a13a098ab9b1",
-                "reference": "5a7199fc5835ee83fc0e9cb7c073a13a098ab9b1",
+                "url": "https://api.github.com/repos/waffle-commons/utils/zipball/20b706720b752f95506ebd60c0861a402706bb7a",
+                "reference": "20b706720b752f95506ebd60c0861a402706bb7a",
                 "shasum": ""
             },
             "require": {
                 "php": "^8.5",
+                "psr/clock": "^1.0",
                 "waffle-commons/contracts": "self.version"
             },
             "require-dev": {
-                "carthage-software/mago": "^1.29",
+                "carthage-software/mago": "^1.59",
                 "cyclonedx/cyclonedx-php-composer": "^6.2",
-                "igor-php/igor-php": "^0.7.0",
-                "php-mock/php-mock-phpunit": "^2.15",
+                "igor-php/igor-php": "^0.10.1",
+                "php-mock/php-mock-phpunit": "^2.16",
                 "phpunit/phpunit": "^12.5",
-                "vimeo/psalm": "^6.16"
+                "vimeo/psalm": "^6.20"
             },
             "type": "library",
             "autoload": {
@@ -1321,22 +1377,22 @@
             "description": "Stateless, pure-function helpers shared across the Waffle Commons ecosystem: no I/O, no per-process state, safe to use across FrankenPHP worker requests.",
             "support": {
                 "issues": "https://github.com/waffle-commons/utils/issues",
-                "source": "https://github.com/waffle-commons/utils/tree/0.1.0-beta6"
+                "source": "https://github.com/waffle-commons/utils/tree/0.1.0-beta7"
             },
-            "time": "2026-09-08T19:50:24+00:00"
+            "time": "2026-11-05T01:31:09+00:00"
         },
         {
             "name": "waffle-commons/waffle",
-            "version": "0.1.0-beta6",
+            "version": "0.1.0-beta7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waffle-commons/waffle.git",
-                "reference": "38eed3826a41870c158cb06857dafd536864c5a7"
+                "reference": "c0484e01ca16b62a51e53fdfa33b748faeca230d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waffle-commons/waffle/zipball/38eed3826a41870c158cb06857dafd536864c5a7",
-                "reference": "38eed3826a41870c158cb06857dafd536864c5a7",
+                "url": "https://api.github.com/repos/waffle-commons/waffle/zipball/c0484e01ca16b62a51e53fdfa33b748faeca230d",
+                "reference": "c0484e01ca16b62a51e53fdfa33b748faeca230d",
                 "shasum": ""
             },
             "require": {
@@ -1352,12 +1408,12 @@
                 "waffle-commons/utils": "self.version"
             },
             "require-dev": {
-                "carthage-software/mago": "^1.29",
+                "carthage-software/mago": "^1.59",
                 "cyclonedx/cyclonedx-php-composer": "^6.2",
-                "igor-php/igor-php": "^0.7.0",
-                "php-mock/php-mock-phpunit": "^2.15",
+                "igor-php/igor-php": "^0.10.1",
+                "php-mock/php-mock-phpunit": "^2.16",
                 "phpunit/phpunit": "^12.5",
-                "vimeo/psalm": "^6.16"
+                "vimeo/psalm": "^6.20"
             },
             "type": "library",
             "autoload": {
@@ -1378,24 +1434,24 @@
             "description": "A modern, minimalist, and security-focused PHP micro-framework.",
             "support": {
                 "issues": "https://github.com/waffle-commons/waffle/issues",
-                "source": "https://github.com/waffle-commons/waffle/tree/0.1.0-beta6"
+                "source": "https://github.com/waffle-commons/waffle/tree/0.1.0-beta7"
             },
-            "time": "2026-09-08T19:56:43+00:00"
+            "time": "2026-11-05T01:39:04+00:00"
         }
     ],
     "packages-dev": [
         {
             "name": "carthage-software/mago",
-            "version": "1.47.6",
+            "version": "1.59.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/carthage-software/mago.git",
-                "reference": "ad48106b8d1dbf3140f3a4bd4d244a5e47c9e495"
+                "reference": "95a25d686a2b584c387326e466d6ead8c885465d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/carthage-software/mago/zipball/ad48106b8d1dbf3140f3a4bd4d244a5e47c9e495",
-                "reference": "ad48106b8d1dbf3140f3a4bd4d244a5e47c9e495",
+                "url": "https://api.github.com/repos/carthage-software/mago/zipball/95a25d686a2b584c387326e466d6ead8c885465d",
+                "reference": "95a25d686a2b584c387326e466d6ead8c885465d",
                 "shasum": ""
             },
             "require": {
@@ -1437,7 +1493,7 @@
             ],
             "support": {
                 "issues": "https://github.com/carthage-software/mago/issues",
-                "source": "https://github.com/carthage-software/mago/tree/1.47.6"
+                "source": "https://github.com/carthage-software/mago/tree/1.59.0"
             },
             "funding": [
                 {
@@ -1445,7 +1501,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-09-04T17:48:48+00:00"
+            "time": "2026-10-25T00:59:15+00:00"
         },
         {
             "name": "composer/spdx-licenses",
@@ -1525,16 +1581,16 @@
         },
         {
             "name": "cyclonedx/cyclonedx-library",
-            "version": "v4.1.0",
+            "version": "v4.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/CycloneDX/cyclonedx-php-library.git",
-                "reference": "6a4f249cecf3b4211ad6bd8cee30fca89e0f81e5"
+                "reference": "a99d940fad1b091fe48f41b6ef1b5960bbb0fbd4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/CycloneDX/cyclonedx-php-library/zipball/6a4f249cecf3b4211ad6bd8cee30fca89e0f81e5",
-                "reference": "6a4f249cecf3b4211ad6bd8cee30fca89e0f81e5",
+                "url": "https://api.github.com/repos/CycloneDX/cyclonedx-php-library/zipball/a99d940fad1b091fe48f41b6ef1b5960bbb0fbd4",
+                "reference": "a99d940fad1b091fe48f41b6ef1b5960bbb0fbd4",
                 "shasum": ""
             },
             "require": {
@@ -1616,7 +1672,7 @@
                     "type": "other"
                 }
             ],
-            "time": "2026-06-04T10:31:45+00:00"
+            "time": "2026-09-17T17:38:29+00:00"
         },
         {
             "name": "cyclonedx/cyclonedx-php-composer",
@@ -1698,16 +1754,16 @@
         },
         {
             "name": "igor-php/igor-php",
-            "version": "v0.7.0",
+            "version": "v0.10.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/igor-php/igor-php.git",
-                "reference": "c22297f5916f47d9f35c20f14f9ea536d9315880"
+                "reference": "a4f9153de9bae1e746a34dfb571462bcda6f4235"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/igor-php/igor-php/zipball/c22297f5916f47d9f35c20f14f9ea536d9315880",
-                "reference": "c22297f5916f47d9f35c20f14f9ea536d9315880",
+                "url": "https://api.github.com/repos/igor-php/igor-php/zipball/a4f9153de9bae1e746a34dfb571462bcda6f4235",
+                "reference": "a4f9153de9bae1e746a34dfb571462bcda6f4235",
                 "shasum": ""
             },
             "require": {
@@ -1742,9 +1798,9 @@
             ],
             "support": {
                 "issues": "https://github.com/igor-php/igor-php/issues",
-                "source": "https://github.com/igor-php/igor-php/tree/v0.7.0"
+                "source": "https://github.com/igor-php/igor-php/tree/v0.10.1"
             },
-            "time": "2026-06-08T12:30:49+00:00"
+            "time": "2026-10-02T23:10:19+00:00"
         },
         {
             "name": "myclabs/deep-copy",
@@ -1808,16 +1864,16 @@
         },
         {
             "name": "nikic/php-parser",
-            "version": "v5.8.0",
+            "version": "v5.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nikic/PHP-Parser.git",
-                "reference": "044a6a392ff8ad0d61f14370a5fbbd0a0107152f"
+                "reference": "9e33da9553fe7786f0962b35f4e4ecf01be89def"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/044a6a392ff8ad0d61f14370a5fbbd0a0107152f",
-                "reference": "044a6a392ff8ad0d61f14370a5fbbd0a0107152f",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/9e33da9553fe7786f0962b35f4e4ecf01be89def",
+                "reference": "9e33da9553fe7786f0962b35f4e4ecf01be89def",
                 "shasum": ""
             },
             "require": {
@@ -1859,9 +1915,9 @@
             ],
             "support": {
                 "issues": "https://github.com/nikic/PHP-Parser/issues",
-                "source": "https://github.com/nikic/PHP-Parser/tree/v5.8.0"
+                "source": "https://github.com/nikic/PHP-Parser/tree/v5.9.0"
             },
-            "time": "2026-07-04T14:30:18+00:00"
+            "time": "2026-09-13T18:51:52+00:00"
         },
         {
             "name": "opis/json-schema",
@@ -2239,25 +2295,25 @@
         },
         {
             "name": "phpunit/php-code-coverage",
-            "version": "12.5.7",
+            "version": "12.5.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-code-coverage.git",
-                "reference": "186dab580576598076de6818596d12b61801880e"
+                "reference": "7440368d94738d54f2c1de24dbd3871793bbb0dd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/186dab580576598076de6818596d12b61801880e",
-                "reference": "186dab580576598076de6818596d12b61801880e",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/7440368d94738d54f2c1de24dbd3871793bbb0dd",
+                "reference": "7440368d94738d54f2c1de24dbd3871793bbb0dd",
                 "shasum": ""
             },
             "require": {
                 "ext-dom": "*",
                 "ext-libxml": "*",
                 "ext-xmlwriter": "*",
-                "nikic/php-parser": "^5.7.0",
+                "nikic/php-parser": "^5.9.0",
                 "php": ">=8.3",
-                "phpunit/php-text-template": "^5.0",
+                "phpunit/php-text-template": "^5.0.1",
                 "sebastian/complexity": "^5.0",
                 "sebastian/environment": "^8.1.2",
                 "sebastian/lines-of-code": "^4.0.1",
@@ -2265,7 +2321,7 @@
                 "theseer/tokenizer": "^2.0.1"
             },
             "require-dev": {
-                "phpunit/phpunit": "^12.5.28"
+                "phpunit/phpunit": "^12.5.37"
             },
             "suggest": {
                 "ext-pcov": "PHP extension that provides line coverage",
@@ -2303,7 +2359,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/php-code-coverage/issues",
                 "security": "https://github.com/sebastianbergmann/php-code-coverage/security/policy",
-                "source": "https://github.com/sebastianbergmann/php-code-coverage/tree/12.5.7"
+                "source": "https://github.com/sebastianbergmann/php-code-coverage/tree/12.5.8"
             },
             "funding": [
                 {
@@ -2323,7 +2379,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-06-01T13:24:19+00:00"
+            "time": "2026-10-03T14:03:50+00:00"
         },
         {
             "name": "phpunit/php-file-iterator",
@@ -2464,23 +2520,23 @@
         },
         {
             "name": "phpunit/php-text-template",
-            "version": "5.0.0",
+            "version": "5.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-text-template.git",
-                "reference": "e1367a453f0eda562eedb4f659e13aa900d66c53"
+                "reference": "babab73b7ef9fae406f2eb3ee11323a61caa63d5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-text-template/zipball/e1367a453f0eda562eedb4f659e13aa900d66c53",
-                "reference": "e1367a453f0eda562eedb4f659e13aa900d66c53",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-text-template/zipball/babab73b7ef9fae406f2eb3ee11323a61caa63d5",
+                "reference": "babab73b7ef9fae406f2eb3ee11323a61caa63d5",
                 "shasum": ""
             },
             "require": {
                 "php": ">=8.3"
             },
             "require-dev": {
-                "phpunit/phpunit": "^12.0"
+                "phpunit/phpunit": "^12.5.37"
             },
             "type": "library",
             "extra": {
@@ -2512,15 +2568,27 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/php-text-template/issues",
                 "security": "https://github.com/sebastianbergmann/php-text-template/security/policy",
-                "source": "https://github.com/sebastianbergmann/php-text-template/tree/5.0.0"
+                "source": "https://github.com/sebastianbergmann/php-text-template/tree/5.0.1"
             },
             "funding": [
                 {
                     "url": "https://github.com/sebastianbergmann",
                     "type": "github"
+                },
+                {
+                    "url": "https://liberapay.com/sebastianbergmann",
+                    "type": "liberapay"
+                },
+                {
+                    "url": "https://thanks.dev/u/gh/sebastianbergmann",
+                    "type": "thanks_dev"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/phpunit/php-text-template",
+                    "type": "tidelift"
                 }
             ],
-            "time": "2025-02-07T04:59:16+00:00"
+            "time": "2026-10-03T04:51:29+00:00"
         },
         {
             "name": "phpunit/php-timer",
@@ -2584,16 +2652,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "12.5.34",
+            "version": "12.5.43",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "6cbff63d670de92cb1cb3d2ff9f40327e9da9c7f"
+                "reference": "1d5a4a3c98fa1ca3a51402c74b66c2c8df85e0bb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/6cbff63d670de92cb1cb3d2ff9f40327e9da9c7f",
-                "reference": "6cbff63d670de92cb1cb3d2ff9f40327e9da9c7f",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/1d5a4a3c98fa1ca3a51402c74b66c2c8df85e0bb",
+                "reference": "1d5a4a3c98fa1ca3a51402c74b66c2c8df85e0bb",
                 "shasum": ""
             },
             "require": {
@@ -2607,10 +2675,10 @@
                 "phar-io/manifest": "^2.0.4",
                 "phar-io/version": "^3.2.1",
                 "php": ">=8.3",
-                "phpunit/php-code-coverage": "^12.5.7",
+                "phpunit/php-code-coverage": "^12.5.8",
                 "phpunit/php-file-iterator": "^6.0.2",
                 "phpunit/php-invoker": "^6.0.0",
-                "phpunit/php-text-template": "^5.0.0",
+                "phpunit/php-text-template": "^5.0.1",
                 "phpunit/php-timer": "^8.0.0",
                 "sebastian/cli-parser": "^4.2.1",
                 "sebastian/comparator": "^7.1.8",
@@ -2621,7 +2689,7 @@
                 "sebastian/object-enumerator": "^7.0.0",
                 "sebastian/recursion-context": "^7.0.1",
                 "sebastian/type": "^6.0.4",
-                "sebastian/version": "^6.0.0",
+                "sebastian/version": "^6.0.1",
                 "staabm/side-effects-detector": "^1.0.5"
             },
             "bin": [
@@ -2662,7 +2730,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.34"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.43"
             },
             "funding": [
                 {
@@ -2670,7 +2738,7 @@
                     "type": "other"
                 }
             ],
-            "time": "2026-08-27T08:38:28+00:00"
+            "time": "2026-11-02T07:10:00+00:00"
         },
         {
             "name": "revolt/event-loop",
@@ -3613,16 +3681,16 @@
         },
         {
             "name": "sebastian/version",
-            "version": "6.0.0",
+            "version": "6.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/version.git",
-                "reference": "3e6ccf7657d4f0a59200564b08cead899313b53c"
+                "reference": "9e935a16187e14f39b0e79910dabd614972cdb26"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/version/zipball/3e6ccf7657d4f0a59200564b08cead899313b53c",
-                "reference": "3e6ccf7657d4f0a59200564b08cead899313b53c",
+                "url": "https://api.github.com/repos/sebastianbergmann/version/zipball/9e935a16187e14f39b0e79910dabd614972cdb26",
+                "reference": "9e935a16187e14f39b0e79910dabd614972cdb26",
                 "shasum": ""
             },
             "require": {
@@ -3655,15 +3723,27 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/version/issues",
                 "security": "https://github.com/sebastianbergmann/version/security/policy",
-                "source": "https://github.com/sebastianbergmann/version/tree/6.0.0"
+                "source": "https://github.com/sebastianbergmann/version/tree/6.0.1"
             },
             "funding": [
                 {
                     "url": "https://github.com/sebastianbergmann",
                     "type": "github"
+                },
+                {
+                    "url": "https://liberapay.com/sebastianbergmann",
+                    "type": "liberapay"
+                },
+                {
+                    "url": "https://thanks.dev/u/gh/sebastianbergmann",
+                    "type": "thanks_dev"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/sebastian/version",
+                    "type": "tidelift"
                 }
             ],
-            "time": "2025-02-07T05:00:38+00:00"
+            "time": "2026-10-04T05:50:08+00:00"
         },
         {
             "name": "staabm/side-effects-detector",
@@ -3790,7 +3870,8 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.5"
+        "php": "^8.5",
+        "ext-redis": "*"
     },
     "platform-dev": {},
     "plugin-api-version": "2.9.0"

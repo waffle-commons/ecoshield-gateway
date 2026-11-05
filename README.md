@@ -119,6 +119,12 @@ Un banc qui ne publie que ses bons résultats n'est pas un banc. Cinq réserves,
   nativement sur l'hôte et les conteneurs sont bornés en CPU, mais ils se partagent le même
   silicium. Le banc refuse mécaniquement de publier toute marche où le générateur n'a pas tenu sa
   cadence — aucune ne l'a été ici — ce qui rend les chiffres exploitables sans les rendre absolus.
+- **Ces chiffres sont ceux de la `0.1.1`**, construite sur `waffle-commons` `0.1.0-beta6` : sans
+  limiteur de débit, sans reprises ni disjoncteur, sans Shield sur la route reprise. Le banc garde
+  cette configuration pour que sa méthode reste rejouable (`config/app_bench.yaml`). En `0.1.1`,
+  chaque GET relayé partait en outre avec un corps vide en `chunked` et une poignée de main
+  `Expect: 100-continue` (corrigé en `0.2.0`) ; les chiffres du chemin proxyfié en portent le coût.
+  La campagne de la `0.3.0` remesurera la passerelle dans sa configuration de production.
 
 ---
 
@@ -152,15 +158,17 @@ Un banc qui ne publie que ses bons résultats n'est pas un banc. Cinq réserves,
 
 | Brique | Choix | Raison |
 |---|---|---|
-| Moteur HTTP | **FrankenPHP** (Caddy) | Mode worker : le framework reste en mémoire entre les requêtes |
-| Framework | **[Waffle-Commons](https://github.com/waffle-commons) `0.1.0-beta6`** | PHP 8.5 strict, sans dette, audité |
-| Standards | **PSR-7 / PSR-15 / PSR-17 / PSR-18** | Aucun couplage propriétaire : le proxy accepte tout client conforme |
-| Cache | **PSR-16** (Redis en production) | Partagé entre workers et entre instances |
-| Qualité | **Mago** 0 erreur · **42 tests, 99.15 %** · **igor-php 0 KO** | Portes bloquantes, pas indicatives |
+| Moteur HTTP | **FrankenPHP 1.13.2** (Caddy), PHP 8.5.12 | Mode worker : le framework reste en mémoire entre les requêtes |
+| Framework | **[Waffle-Commons](https://github.com/waffle-commons) `0.1.0-beta7`** (`0.2.0`) | PHP 8.5 strict, sans dette, audité |
+| Standards | **PSR-7 / PSR-15 / PSR-16 / PSR-17 / PSR-18** | Aucun couplage propriétaire : le proxy accepte tout client conforme |
+| Résilience | **Limiteur de débit, reprises, disjoncteur** (`waffle-commons` NET-01/02/03) | État partagé dans Redis entre workers et instances |
+| Cache | **PSR-16** (Redis en production) | Partagé entre workers et entre instances ; une panne de Redis le contourne |
+| Qualité | **Mago** 0 diagnostic · **85 tests, 99.50 %** · **igor-php 0 KO** | Portes bloquantes, pas indicatives |
 
-**Le code applicatif de la passerelle n'importe que des interfaces PSR.** Il ne dépend d'aucune
-classe concrète du framework — pas même de ses contrats. C'est la démonstration recherchée : une
-infrastructure réellement utile, écrite contre une surface publique.
+**La passerelle ne passe que par la surface publique du framework.** Le proxy et le Shield ne
+connaissent que des interfaces PSR et des contrats `waffle-commons/contracts` ; les fabriques
+assemblent des classes publiées. Aucune ne va chercher une classe interne d'un composant : c'est la
+démonstration recherchée, une infrastructure réellement utile écrite contre une surface publique.
 
 ---
 
@@ -194,6 +202,26 @@ curl localhost:8099/api/products/42      # route reprise, servie par le worker
 curl -i localhost:8099/api/catalogue     # proxyfiée + cache (en-tête X-EcoShield-Cache)
 ```
 
+### Le laboratoire Strangler Fig
+
+La démonstration par défaut tourne devant un stand-in synthétique. Le **laboratoire** place la
+passerelle devant le vrai monolithe Symfony 5.4 du banc, avec la base PostgreSQL que les deux camps
+lisent. Le monolithe est versionné et s'installe depuis son verrou, et toutes les images sont
+épinglées par digest : le laboratoire se reconstruit à l'identique.
+
+```bash
+bench/legacy-symfony/bootstrap.sh       # installe le monolithe depuis composer.lock
+docker compose -f docker-compose.yml -f docker-compose.lab.yml up -d --build
+
+curl -i localhost:8099/api/users/4d22fb9d-795f-469e-a357-6070878c2acb   # route reprise : MISS, puis HIT
+docker compose -f docker-compose.yml -f docker-compose.lab.yml stop legacy-fpm
+curl -i localhost:8099/api/orders/1     # 502 tant que le circuit est fermé, puis 503 immédiats
+```
+
+On y observe la route reprise derrière le Shield, une route proxyfiée mise en cache
+(`/api/catalogue`), une route proxyfiée privée (`/api/orders/{id}`), le limiteur, et le disjoncteur
+quand le monolithe tombe. Ce n'est pas un banc : aucune borne CPU, aucune mesure publiée.
+
 ### Les routes livrées
 
 Une passerelle est faite pour qu'on y ajoute **ses** routes. Celles qui sont livrées sont donc peu
@@ -204,12 +232,15 @@ nombreuses, et leur statut est explicite — il faut savoir lesquelles retirer a
 | `GET /__ecoshield/health` | **exploitation** | Sonde de vivacité. Rend compte de **la passerelle seule** : elle ne doit pas se déclarer malade parce que l'amont est tombé. |
 | `GET /__ecoshield/memory` | **diagnostic, fermée par défaut** | Publie le tas PHP du worker. Ouverte uniquement si `ECOSHIELD_DIAGNOSTICS` est vrai ; répond 404 sinon. Publier son empreinte mémoire en permanence renseignerait un attaquant sur l'effet de ses requêtes. |
 | `GET /api/products/{id}` | **démonstration** | Route reprise à charge utile **statique**. Elle illustre le coût du chemin, pas un domaine métier. |
-| `GET /api/users/{id}` | **démonstration** | Route reprise servant de la **vraie donnée**, via le pool relationnel. Elle lit une table `users` que **seul le jeu d'amorçage du banc** alimente : sans base configurée, le pool étant paresseux, elle répond **503** et le reste de la passerelle fonctionne normalement. |
-| `{path}` *(toutes méthodes)* | **cœur du produit** | Attrape-tout de priorité minimale : Shield puis proxy vers le monolithe. C'est la route qui ne se retire pas. |
+| `GET /api/users/{id}` | **démonstration** | Route reprise servant de la **vraie donnée**, via le pool relationnel, **derrière le Shield** : un hit ne touche pas la base. Elle lit une table `users` que **seul le jeu d'amorçage du banc** alimente : sans base configurée, le pool étant paresseux, elle répond **503**, jamais mis en cache, et le reste de la passerelle fonctionne normalement. |
+| `{path}` *(toutes méthodes)* | **cœur du produit** | Attrape-tout de priorité minimale : Shield puis proxy vers le monolithe, par le client résilient (délais bornés, reprises des seules méthodes idempotentes, disjoncteur). C'est la route qui ne se retire pas. |
+
+**Toutes les routes passent par le limiteur de débit**, sondes comprises : 600 requêtes par minute
+et par adresse cliente par défaut, puis `429` avec `Retry-After`.
 
 > **Les deux routes de démonstration sont à supprimer** quand vous reprenez vos propres routes.
-> Elles existent pour que le banc mesure quelque chose de comparable, et pour montrer à quoi
-> ressemble une reprise — l'une sans source de données, l'autre avec.
+> Elles existent pour que le banc et le laboratoire mesurent quelque chose de comparable, et pour
+> montrer à quoi ressemble une reprise — l'une sans source de données, l'autre avec.
 
 ### Rejouer les mesures
 
@@ -252,20 +283,30 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 ### Configuration
 
-Toute la configuration passe par l'environnement (voir [`.env.example`](./.env.example)) :
-`UPSTREAM_URL` (le monolithe à protéger), `CACHE_ADAPTER` et `REDIS_DSN`, `WORKER_COUNT`,
-`MAX_REQUESTS`.
+Le déploiement passe par l'environnement (voir [`.env.example`](./.env.example)) :
+`UPSTREAM_URL` (le monolithe à protéger), `CACHE_ADAPTER` et `REDIS_DSN` (Shield, disjoncteur et
+limiteur), `TRUSTED_PROXIES` (les proxys devant la passerelle : **à renseigner derrière un
+répartiteur de charge**, sinon tous les clients partagent un seau), `WORKER_COUNT`, `MAX_REQUESTS`,
+et pour la route reprise `DB_*` et `DB_PING_FRESHNESS_MS`.
+
+Les réglages de comportement vivent dans [`config/app.yaml`](./config/app.yaml), commentés :
+quota du limiteur (`waffle.security.rate_limit.*`), délais, reprises et disjoncteur
+(`waffle.http_client.*` — les clés du framework), durée de vie et taille maximale du Shield
+(`gateway.shield.*`), Shield sur la route reprise (`gateway.rescue.cache`).
 
 ---
 
 ## 🗺️ État et périmètre
 
-**Preuve de concept fonctionnelle**, exécutable et mesurée. Les trois piliers sont implémentés et
-couverts par les tests.
+**Alpha (`0.2.0`)**, sur les paquets `waffle-commons` `0.1.0-beta7` publiés : les trois piliers, plus
+la limitation de débit, les reprises et le disjoncteur du framework, éprouvés dans le laboratoire
+(panne du monolithe, panne de Redis, rafales).
 
-**Volontairement absent, et documenté comme tel :** pooling de connexions vers l'amont, reprise sur
-erreur et coupe-circuit, passthrough WebSocket, répartition sur plusieurs amonts, authentification de
-bord. Ces briques relèvent du framework (`resilience-net`, beta7) plutôt que de la passerelle.
+**Pour la `0.3.0` (bêta) :** sondes `/healthz` et `/readyz` du framework et vidange propre à l'arrêt,
+métriques, et la campagne FinOps complète dans la configuration de production.
+
+**Volontairement absent, et documenté comme tel :** passthrough WebSocket, répartition sur
+plusieurs amonts, authentification de bord.
 
 Le détail des choix — dont l'absence délibérée de garde SSRF sur le client amont — est dans
 [`SECURITY.md`](./SECURITY.md).

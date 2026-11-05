@@ -15,8 +15,13 @@
 # macOS et l'opcache revalide alors chaque fichier : `bench/BENCH-RESULT.md`
 # consigne une série entière perdue à cette erreur.
 ARG PHP_VERSION='8.3'
+# Digest de l'image : une étiquette `8.3-fpm-alpine` suit chaque correctif de PHP
+# et d'Alpine, si bien que deux constructions du « même » monolithe ne mesuraient
+# pas forcément le même binaire. À changer AVEC PHP_VERSION : Docker résout
+# `étiquette@digest` par le seul digest.
+ARG PHP_DIGEST='@sha256:41ebe02446a39ca8fa4e0b2b9e6ce819271b3cf3afac16f9a9a4524f855337ce'
 
-FROM php:${PHP_VERSION}-fpm-alpine
+FROM php:${PHP_VERSION}-fpm-alpine${PHP_DIGEST}
 
 # Deux extensions, et pas une de plus.
 #

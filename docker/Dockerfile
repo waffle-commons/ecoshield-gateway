@@ -2,11 +2,25 @@
 #
 # EcoShield Gateway — image FrankenPHP (mode worker).
 #
-ARG FRANKEN_VERSION='1.12.2'
+# FrankenPHP 1.13.2 sur PHP 8.5.12 : les publications de sécurité du 2026-10-21
+# (PHP2Shell, CVE-2026-109618 et CVE-2026-109619), auxquelles 1.12.2 était exposée.
+ARG FRANKEN_VERSION='1.13.2'
 ARG PHP_VERSION='8'
 ARG OS='trixie'
+# Digest de l'image de base : une étiquette bouge, un digest non (construction
+# reproductible). À changer AVEC FRANKEN_VERSION : Docker résout
+# `étiquette@digest` par le seul digest, donc un digest oublié construit
+# l'ancienne image. Le nouveau : `docker pull dunglas/frankenphp:<version>-php8-trixie`,
+# puis `docker image inspect --format '{{index .RepoDigests 0}}'` sur la même étiquette.
+ARG FRANKEN_DIGEST='@sha256:8a7a935deb33959200628497b8201423c8b777d513a62ac1b69a91c624afdb3d'
+# Composer, épinglé de la même façon : `composer:latest` changeait d'installeur
+# d'une construction à l'autre, sans que rien ne le signale.
+ARG COMPOSER_VERSION='2.10.3'
+ARG COMPOSER_DIGEST='@sha256:da624c2c705d54e2f5a9bb77a5dc6c7d091711433ebefd7035672e84c2010fee'
 
-FROM dunglas/frankenphp:${FRANKEN_VERSION}-php${PHP_VERSION}-${OS} AS base
+FROM composer:${COMPOSER_VERSION}${COMPOSER_DIGEST} AS composer-bin
+
+FROM dunglas/frankenphp:${FRANKEN_VERSION}-php${PHP_VERSION}-${OS}${FRANKEN_DIGEST} AS base
 
 # Pas de FRANKENPHP_CONFIG : le mode worker est déclaré dans la Caddyfile,
 # qui est la seule à être lue dès lors qu'on en fournit une.
@@ -58,13 +72,13 @@ ENV APP_ENV=dev
 # instrument de mesure de code — c'est de la surface d'attaque et du ralentissement.
 RUN install-php-extensions pcov
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer-bin /usr/bin/composer /usr/bin/composer
 CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile" ]
 
 # -----------------------------------------------------------------------------
 FROM base AS builder
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer-bin /usr/bin/composer /usr/bin/composer
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --prefer-dist --no-progress --no-interaction --optimize-autoloader
 COPY . .
