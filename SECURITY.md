@@ -200,7 +200,7 @@ réseau interne.
 | Analyse statique (Mago : lint, analyse, périmètre) | 0 diagnostic, aucune ligne de base tolérée |
 | Tests | 85 tests, **99.50 %** de couverture des lignes ; ceux du pool, du disjoncteur et du limiteur contre un vrai Redis |
 | Sûreté en mode worker (`igor-php` 0.10.1) | **0 KO** sur 15 fichiers · 15 sans état · 0 avertissement |
-| Périmètre (k6 + socket brute) | **280/280** assertions sur l'alpha, aucun désync (laboratoire, 2026-10-22) |
+| Périmètre (k6 + socket brute) | **280/280** assertions, aucun désync (laboratoire, image de production de la `0.2.0`) |
 | Audit des dépendances (`composer audit`) | intégré à la CI |
 | Recherche de secrets (TruffleHog) | intégrée à la CI |
 | SBOM (CycloneDX) | produit à chaque exécution de CI |

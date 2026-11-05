@@ -23,10 +23,10 @@ La trajectoire suit la maturité de la passerelle, pas le calendrier du framewor
 
 ---
 
-## [Non publié]
+## [0.2.0] — 2026-11
 
-_Cible `waffle-commons` **`0.1.0-beta7`** : `composer.json` l'exige déjà, et `composer.lock` suivra sa
-publication sur Packagist. La version `0.2.0` (alpha) sera construite et vérifiée sur ces paquets publiés._
+_Alpha, construite et vérifiée sur les paquets `waffle-commons` **`0.1.0-beta7`** publiés sur Packagist
+(`composer.lock`), dans l'image de production._
 
 ### Ajouté
 
@@ -64,7 +64,8 @@ publication sur Packagist. La version `0.2.0` (alpha) sera construite et vérifi
   0.1.1 a mesuré (Symfony 5.4.45, doctrine/dbal 4.4.4) ; les stubs, désormais redondants, disparaissent.
 - **`bin/framework-local.sh`** : construire la passerelle sur une version non publiée de
   `waffle-commons`, depuis le monorepo, sans rien versionner (procédure dans `CONTRIBUTING.md`). C'est
-  ainsi que l'alpha a été construite et vérifiée sur `0.1.0-beta7` avant sa publication.
+  ainsi que l'alpha a été construite et vérifiée sur `0.1.0-beta7` avant sa publication ; la `0.2.0`
+  elle-même est construite sur les paquets publiés.
 
 ### Modifié
 
@@ -86,12 +87,13 @@ publication sur Packagist. La version `0.2.0` (alpha) sera construite et vérifi
 - **`ext-redis` est requis** : l'état partagé du disjoncteur et du limiteur passe par le pool phpredis de
   `waffle-commons/data`. Les tests du pool, du disjoncteur et du limiteur tournent contre un vrai Redis
   (`ECOSHIELD_TEST_REDIS_DSN`), et la CI démarre le sien, à la même image et au même digest que la pile.
-- **Chaîne d'outils alignée sur l'écosystème beta7** : `carthage-software/mago` `^1.50` (1.50.0) et
-  `igor-php/igor-php` `^0.9.7`. La CI épingle l'auditeur igor en **0.9.7**, avec la vérification stricte
-  de l'écosystème : binaire en cache supprimé, puis correspondance exacte de la ligne de version. L'ancien
-  contrôle `grep -qF` pouvait valider la bannière de téléchargement au lieu du binaire réellement exécuté.
+- **Chaîne d'outils alignée sur l'écosystème beta7** : `carthage-software/mago` `^1.59` (1.59.0),
+  `igor-php/igor-php` `^0.10.1` et PHPUnit 12.5.43. La CI épingle l'auditeur igor en **0.10.1**, avec la
+  vérification stricte de l'écosystème : binaire en cache supprimé, puis correspondance exacte de la ligne
+  de version. L'ancien contrôle `grep -qF` pouvait valider la bannière de téléchargement au lieu du binaire
+  réellement exécuté.
 - **Actions GitHub alignées sur le modèle de composant** : `actions/checkout` v7, `actions/cache` v6, et
-  TruffleHog épinglé en `v3.97.9` au lieu de suivre `main`.
+  TruffleHog épinglé en `v3.99.7` au lieu de suivre `main`.
 
 ### Sécurité
 
@@ -131,6 +133,31 @@ Deux constats du passage à igor 0.9.7 :
   un service injecté. Ici, l'écriture part vers le backend PSR-16 : Redis dans la configuration livrée, ou
   le cache fichier. L'adaptateur `array` implémente `ResettableInterface` et `Container::reset()` le vide
   après chaque requête. Motif vérifié dans le code, pas supposé ; l'audit rend 12 OK, 0 KO, 0 WARN.
+  Avec igor 0.10.1, il rend 15 OK, 0 KO, 0 WARN.
+
+### Vérifié
+
+Sur les paquets publiés et l'image de production, dans le laboratoire. Ce sont des contrôles, pas des
+mesures publiées.
+
+- **Portes** : mago sans aucune sortie, OK (85 tests, 253 assertions), 99.50 % des lignes, igor 0.10.1
+  15/15 sans état, `composer audit` sans avis.
+- **Image** : les 15 paquets `waffle-commons` en `0.1.0-beta7`, aucun paquet de développement, FrankenPHP
+  1.13.2 sur PHP 8.5.12.
+- **Routes** : la route reprise passe de MISS à HIT, le catalogue proxyfié aussi ; les commandes, privées,
+  ne sont jamais mises en cache (BYPASS) ; la sonde mémoire reste fermée (404).
+- **Corps** : un POST en JSON, un formulaire, un envoi `chunked`, un PUT de 1 Mio et un PATCH atteignent le
+  monolithe, qui répond lui-même 405 sur ses routes GET.
+- **Reprises** : le monolithe arrêté, un GET et un PUT font 3 tentatives, un POST exactement 1.
+- **Disjoncteur** : circuit ouvert, la passerelle répond 503 sans appeler le monolithe, et le circuit se
+  referme une trentaine de secondes après son retour.
+- **Pannes** : Redis arrêté, toutes les routes répondent 200, et le cache reprend à son retour (MISS puis
+  HIT) ; PostgreSQL arrêté, une lecture en cache répond 200 et une lecture absente 503, jamais mise en
+  cache.
+- **Limiteur** : 700 requêtes d'un même client, 32 à la fois : 621 × 200, puis 79 × 429 portant
+  `RateLimit-*` et `Retry-After`.
+- **Périmètre** : k6 280/280 assertions ; à la socket brute, une seule réponse par message, aucun désync,
+  et un double `Content-Length` refusé par Caddy.
 
 ---
 

@@ -159,7 +159,7 @@ Un banc qui ne publie que ses bons résultats n'est pas un banc. Cinq réserves,
 | Brique | Choix | Raison |
 |---|---|---|
 | Moteur HTTP | **FrankenPHP 1.13.2** (Caddy), PHP 8.5.12 | Mode worker : le framework reste en mémoire entre les requêtes |
-| Framework | **[Waffle-Commons](https://github.com/waffle-commons) `0.1.0-beta7`** (`0.2.0`, en préparation) | PHP 8.5 strict, sans dette, audité |
+| Framework | **[Waffle-Commons](https://github.com/waffle-commons) `0.1.0-beta7`** (`0.2.0`) | PHP 8.5 strict, sans dette, audité |
 | Standards | **PSR-7 / PSR-15 / PSR-16 / PSR-17 / PSR-18** | Aucun couplage propriétaire : le proxy accepte tout client conforme |
 | Résilience | **Limiteur de débit, reprises, disjoncteur** (`waffle-commons` NET-01/02/03) | État partagé dans Redis entre workers et instances |
 | Cache | **PSR-16** (Redis en production) | Partagé entre workers et entre instances ; une panne de Redis le contourne |
@@ -298,7 +298,7 @@ quota du limiteur (`waffle.security.rate_limit.*`), délais, reprises et disjonc
 
 ## 🗺️ État et périmètre
 
-**Alpha (`0.2.0`, en préparation)**, sur `waffle-commons` `0.1.0-beta7` : les trois piliers, plus
+**Alpha (`0.2.0`)**, sur les paquets `waffle-commons` `0.1.0-beta7` publiés : les trois piliers, plus
 la limitation de débit, les reprises et le disjoncteur du framework, éprouvés dans le laboratoire
 (panne du monolithe, panne de Redis, rafales).
 
